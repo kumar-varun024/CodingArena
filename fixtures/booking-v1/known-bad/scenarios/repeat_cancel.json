@@ -1,0 +1,13 @@
+{
+  "check_id": "BOOK-04",
+  "scenario": {
+    "capacity": 3,
+    "steps": [
+      {"op": "book", "args": ["once", 2], "expected": true},
+      {"op": "cancel", "args": ["once"], "expected": true},
+      {"op": "cancel", "args": ["once"], "expected": false},
+      {"op": "available", "args": [], "expected": 3},
+      {"op": "reservations", "args": [], "expected": {}}
+    ]
+  }
+}

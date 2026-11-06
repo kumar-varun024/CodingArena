@@ -9,7 +9,7 @@ The two development roles build one product. Runtime contestants are separate na
 | 3 — Full match | Reproduction, adjudication, shared suite, repair, recovery, guarded selection and exports | Review/repair/decision UI, bridge commands, errors and fixture scenarios | Automated fixture match passes; invalid claims, stale evidence, runner errors and neither outcomes tested |
 | 4 — Integration and demo | Combine ready branches, run shared checks, verify exported patch on fresh task base | Complete native Switch setup, demo and experience docs | Genuine human + two-agent match recorded; patch applies and passes recorded suite; limitations documented |
 
-Current sprint: **1 — Foundation**. A's implementation evidence is recorded below as work lands. B's work and shared hash confirmation remain separate gates.
+Current sprint: **1 — Foundation**. A's foundation is implemented and verified. B's work and shared hash confirmation remain pending; the shared sprint gate is not yet complete.
 
 ## Sprint 1 scope
 
@@ -17,6 +17,15 @@ Current sprint: **1 — Foundation**. A's implementation evidence is recorded be
 - Bundle sanitized starter, public scenarios, frozen specification, engine-only reference/held-out cases and explicitly labelled known-bad fixtures.
 - Provide a trusted bounded scenario driver, engine health/doctor/serve skeleton and reproducible checks.
 - Do not claim match execution, candidate eligibility or live Switch integration before those features exist.
+
+## Sprint 1 evidence (2026-11-06)
+
+- Canonical contract hash verified and published on `feat/arena-engine` in bootstrap commit `df9d8b6`.
+- Frozen public task distribution, engine-only reference/held-out cases, known-good and two known-bad fixtures are bundled. Private BOOK-07 instance isolation is checked inside Docker.
+- Foundation/driver unit tests and snapshot-copy independence test pass. Docker fixture checker executed 24 fresh containers: 22 expected passes and 2 expected known-bad failures, with no unexpected outcomes.
+- `contract` and `doctor` CLI checks pass. Docker and pinned image are available; the production executor is explicitly reported as unimplemented.
+- A real HTTP request to the running health service returned the exact v1 shape. [Generated response snapshot](../contracts/sprint1-api-snapshot.json) is available for B; it covers health only.
+- No live Switch session was exercised. B's client skeleton, native smoke and matching hash confirmation must be supplied by B. The real create/assignment/submission client checkpoint belongs to Sprint 2.
 
 ## Integration sequence (Sprint 4 only)
 
