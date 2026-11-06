@@ -2,7 +2,7 @@
 
 This setup uses interface **1.1**, HTTP base `/api/v1`, and task `booking-v1`. The contract hash is `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`. Both product branches must use that revision. The two development chats are not the two runtime contestants.
 
-The native room round trip is currently **NOT RUN — setup in progress**. The user is Role B and selected their teammate's machine as the demo host. Role A (the teammate) owns engine bootstrap and final integration; Role B installs the client/prompts and configures the native Switch experience. The teammate host OS, Console installation state and access details are still to be confirmed. No authenticated Switch room/provider session on that host has been observed. See [the smoke record](../switch/smoke-record.json). Fixture tests and a direct Python command do not satisfy the native checkpoint.
+The native room round trip is currently **NOT RUN — setup in progress**. The user is Role B and selected their teammate's machine as the demo host. Role A (the teammate) owns engine bootstrap and final integration; Role B installs the client/prompts and configures the native Switch experience. The user reports that the teammate runs Kali Linux, already has Switch Console installed, and has not configured SSH access. Use [the local Kali setup commands](../switch/kali-setup.md); remote execution has not been performed. No authenticated Switch room/provider session on that host has been observed. See [the smoke record](../switch/smoke-record.json). Fixture tests and a direct Python command do not satisfy the native checkpoint.
 
 ## Choose and prepare one demo host
 
@@ -123,7 +123,7 @@ Do this before extensive native-match work. It needs no engine token or backend 
 
 1. Record Console version, runtime kind/host, actual provider/model if known, registered directory and addressing policy.
 2. In the real build-a room, a human sends an addressed request such as: `@arena-a Run python3 .arena/bin/arena_smoke.py --expected-root ACTUAL_SLOT_A_ROOT from your registered slot root, and reply here with the exact JSON output.`
-3. Observe the native agent execute that harmless command and post the actual output in the room. Check the reported directory and digest. Repeat for B before the final integrated match.
+3. Observe the native agent execute that harmless command and post the actual output in the room. Check the reported directory and digest. Do not change directories before the smoke command; a wrong registered Directory must produce a visible mismatch. Repeat for B before the final integrated match.
 4. Record genuine room/human-message/reply IDs if the UI/runtime provides them; otherwise retain null IDs and an operator-recorded note with saved room output. Update the smoke record only from that evidence. A generated chat transcript or direct local helper run is not a pass.
 
 An early client smoke may use the labelled fixture server, but the final checkpoint must fetch a real assignment, submit real committed code, poll real Docker-runner jobs, and post real room replies through A's engine. For that checkpoint use A's actual engine URL, normally `http://127.0.0.1:8765`, and the installed CLI:

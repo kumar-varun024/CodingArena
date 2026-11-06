@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import shlex
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -54,6 +55,20 @@ class InstallerTests(unittest.TestCase):
                     if "--expected-root" in arguments:
                         self.assertEqual(arguments[-1], str(root))
         self.assertFalse(result["credentials_read"])
+
+    def test_generated_smoke_preserves_actual_registered_directory(self):
+        installer.install(self.state, self.url)
+        instructions = (self.root() / ".arena" / "console-instructions.md").read_text()
+        smoke_command = next(line for line in instructions.splitlines()
+                             if line.startswith("python3 ") and "--expected-root" in line)
+        for actual_slot, expected_status in [("a", 0), ("b", 1)]:
+            result = subprocess.run(["sh", "-c", smoke_command], cwd=self.root(actual_slot),
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, expected_status)
+            output = json.loads(result.stdout)
+            self.assertEqual(output["working_directory"], str(self.root(actual_slot)))
+            self.assertEqual(output["directory_matches_expected"], actual_slot == "a")
+        self.assertNotIn("cd --", instructions)
 
     def test_check_does_not_write_or_create_destination_directories(self):
         result = installer.install(self.state, self.url, check=True)
