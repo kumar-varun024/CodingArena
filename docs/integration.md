@@ -9,7 +9,7 @@ The two development roles build one product. Runtime contestants are separate na
 | 3 — Full match | Reproduction, adjudication, shared suite, repair, recovery, guarded selection and exports | Review/repair/decision UI, bridge commands, errors and fixture scenarios | Automated fixture match passes; invalid claims, stale evidence, runner errors and neither outcomes tested |
 | 4 — Integration and demo | Combine ready branches, run shared checks, verify exported patch on fresh task base | Complete native Switch setup, demo and experience docs | Genuine human + two-agent match recorded; patch applies and passes recorded suite; limitations documented |
 
-Current sprint: **1 — Foundation**. A's foundation is implemented and verified. B's work and shared hash confirmation remain pending; the shared sprint gate is not yet complete.
+Current sprint: **2 — First working flow**. A's engine flow is implemented and verified. B's real-client checkpoint and shared contract-hash confirmation remain pending; the shared sprint gate is not yet complete.
 
 ## Sprint 1 scope
 
@@ -26,6 +26,16 @@ Current sprint: **1 — Foundation**. A's foundation is implemented and verified
 - `contract` and `doctor` CLI checks pass. Docker and pinned image are available; the production executor is explicitly reported as unimplemented.
 - A real HTTP request to the running health service returned the exact v1 shape. [Generated response snapshot](../contracts/sprint1-api-snapshot.json) is available for B; it covers health only.
 - No live Switch session was exercised. B's client skeleton, native smoke and matching hash confirmation must be supplied by B. The real create/assignment/submission client checkpoint belongs to Sprint 2.
+
+## Sprint 2 engine evidence (2026-11-06)
+
+- `init` provisions marked state, independent sanitized Git clones, fixed slot roots and scoped 0600 tokens. Clean HEAD/ancestry/allowed-file validation creates source snapshots independent of later edits.
+- The v1 create/assignment/practice/submission/match/events/job/artifact endpoints are implemented with bearer role checks and persisted actor/endpoint/request-ID retries. Operator reveal/cancel and a journalled operator CLI are available.
+- The serialized Docker executor records source/spec/suite/runner digests, public-only practice (7 checks) and official initial verification (11 checks). Errors, cancellation and interrupted jobs produce no successful eligibility.
+- `ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests`: **56 passed**, no skips; one upstream Starlette HTTPX deprecation warning.
+- `.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint2-api-snapshot.json`: actual HTTP/operator-CLI/Docker flow passed. Known-good fixture passed, repeat-cancel fixture failed, private projections/idempotency/reveal/cancel behaved as expected. [Observed API samples](../contracts/sprint2-api-snapshot.json) are labelled fixture clients against the live engine.
+- Startup marks interrupted running jobs error, resumes queued work only after successful state-scoped orphan cleanup, and holds an exclusive server lock. Same-snapshot recovery finalization remains Sprint 3.
+- Contract version/hash and dependencies are unchanged. No B-owned files, native Switch runtime or B client were exercised. A's engine is ready for B's Sprint 2 API checkpoint; this is not the complete arena workflow.
 
 ## Integration sequence (Sprint 4 only)
 

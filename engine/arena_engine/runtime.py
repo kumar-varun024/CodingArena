@@ -19,7 +19,7 @@ class Settings:
     @classmethod
     def from_env(cls):
         return cls(
-            Path(os.environ.get("ARENA_STATE_DIR", str(ROOT / "var"))).expanduser().resolve(),
+            Path(os.environ.get("ARENA_STATE_DIR", str(ROOT / "var"))).expanduser().absolute(),
             os.environ.get("ARENA_RUNNER_IMAGE", DEFAULT_IMAGE),
         )
 
@@ -39,14 +39,18 @@ def runtime_status(settings: Settings | None = None) -> dict:
     pinned = re.fullmatch(r"[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}", settings.runner_image) is not None
     docker_available = _docker("info", "--format", "{{.ServerVersion}}")
     image_available = pinned and docker_available and _docker("image", "inspect", settings.runner_image)
+    from .workspaces import read_runtime, WorkspaceError
+    try:
+        read_runtime(settings)
+        initialized = True
+    except WorkspaceError:
+        initialized = False
     return {
         "docker_available": docker_available,
         "image_pinned": pinned,
         "image_available": image_available,
         "runner_image": settings.runner_image,
-        # The production job executor belongs to Sprint 2. Image readiness alone
-        # must not be reported as a working official verification runner.
-        "runner_available": False,
-        "executor_implemented": False,
-        "state_initialized": (settings.state_dir / ".arena-state").is_file(),
+        "runner_available": bool(initialized and image_available),
+        "executor_implemented": True,
+        "state_initialized": initialized,
     }

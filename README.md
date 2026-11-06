@@ -4,7 +4,7 @@ Two coding agents solve the same repository task independently. A human reviews 
 
 The intended flow is assignment → independent submissions → cross-review → human adjudication → repair → full verification → selection and export. Passing recorded checks does not prove code is bug-free.
 
-**Current status: A's Sprint 1 foundation is verified.** The frozen v1 contract, booking-v1 task pack, scenario driver, health service and Docker fixture checker are available. B's foundation and shared hash confirmation remain pending. Match execution, dashboard integration and a live Switch demonstration are later sprint gates. Development roles A/B are separate from the two runtime contestants.
+**Current status: A's Sprint 2 engine flow is verified.** Initialize scoped workspaces/tokens, create a match, fetch assignments, run public practice, submit frozen commits, poll actual Docker results, then reveal or cancel. Match state and retries persist in SQLite. A labelled fixture smoke exercises the real HTTP service and operator CLI. B's real-client checkpoint remains pending; challenge adjudication, repair, selection/export and the live Switch demonstration are later sprint gates. Development roles A/B are separate from the two runtime contestants.
 
 - [Local setup and verification](docs/setup.md)
 - [Engine scope and interface](docs/engine.md)

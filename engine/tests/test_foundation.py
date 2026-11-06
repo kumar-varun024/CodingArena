@@ -22,13 +22,13 @@ def test_frozen_contract_and_canonical_types(tmp_path):
         load_contract(changed)
 
 
-def test_health_matches_manifest_and_unknown_route_is_json():
-    with TestClient(create_app()) as client:
+def test_health_matches_manifest_and_unknown_route_is_json(tmp_path):
+    with TestClient(create_app(settings=Settings(tmp_path / "uninitialized", DEFAULT_IMAGE))) as client:
         response = client.get("/api/v1/health")
         assert response.status_code == 200
         assert response.json() == {"api_version": "1.0", "mode": "live",
                                    "runner_available": False, "status": "ok"}
-        missing = client.get("/api/v1/matches/missing")
+        missing = client.get("/api/v1/unknown-route")
         assert missing.status_code == 404
         assert missing.json() == {"error": {"code": "NOT_FOUND", "message": "Not Found", "details": {}}}
 
