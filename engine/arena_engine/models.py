@@ -3,7 +3,9 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from .contract import canonical_bytes
+from .driver import validate_scenario
 
 
 class Model(BaseModel):
@@ -41,4 +43,42 @@ class Submit(Mutation):
 
 class Action(Mutation):
     action: Literal["reveal", "start_repair", "finalize", "cancel"]
+    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+
+
+class ChallengeRequest(Mutation):
+    target_candidate_id: str
+    title: Annotated[str, Field(min_length=1, max_length=240)]
+    requirement_ids: Annotated[list[Literal["BOOK-01", "BOOK-02", "BOOK-03", "BOOK-04", "BOOK-05", "BOOK-06", "BOOK-07"]], Field(min_length=1, max_length=7)]
+    scenario: dict
+
+    @field_validator("scenario")
+    @classmethod
+    def bounded_scenario(cls, value):
+        validate_scenario(value)
+        if len(canonical_bytes(value)) > 65536:
+            raise ValueError("scenario exceeds input limit")
+        return value
+
+
+class ReviewComplete(Mutation):
+    target_candidate_id: str
+
+
+class ChallengeDecision(Mutation):
+    disposition: Literal["accepted", "rejected"]
+    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+
+
+class EvidenceKey(Model):
+    candidate_digest: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    spec_digest: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    suite_digest: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+    runner_digest: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
+
+
+class Selection(Mutation):
+    selection: Literal["a", "b", "neither"]
+    candidate_id: str | None
+    expected_evidence_key: EvidenceKey | None
     reason: Annotated[str, Field(min_length=1, max_length=2000)]

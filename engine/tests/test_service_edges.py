@@ -47,3 +47,36 @@ def test_failed_orphan_cleanup_blocks_execution(tmp_path):
         assert engine._thread is None
     finally:
         engine.stop()
+
+
+def test_legacy_match_cannot_silently_use_a_new_reference(tmp_path):
+    from test_full_match import make_reviewing, report_challenge
+    client, app, _, _, tokens, match_id, match = make_reviewing(tmp_path)
+    with app.state.engine.store.transaction() as db:
+        old = app.state.engine._match(db, match_id)
+        old.pop("_reference")
+        app.state.engine.store.save_match(db, old)
+    response = report_challenge(client, match_id, "a", tokens["a"], match["slots"]["b"]["candidate"]["candidate_id"])
+    assert response.status_code == 409
+    assert "no frozen reference" in response.json()["error"]["message"]
+
+
+def test_changed_legacy_baseline_is_refused_before_finalization(tmp_path):
+    from test_full_match import make_reviewing, req, post, action, API
+    client, app, _, _, tokens, match_id, match = make_reviewing(tmp_path)
+    with app.state.engine.store.transaction() as db:
+        old = app.state.engine._match(db, match_id)
+        old.pop("_baseline_checks")
+        old.pop("_public_cases")
+        app.state.engine.store.save_match(db, old)
+    for slot in ("a", "b"):
+        response = post(client, f"{API}/matches/{match_id}/reviews/{slot}/complete", req({
+            "target_candidate_id": match["slots"]["b" if slot == "a" else "a"]["candidate"]["candidate_id"],
+        }), tokens[slot])
+        assert response.status_code == 200
+    # Model a newer installed task pack while retaining the older frozen match.
+    app.state.engine.full = app.state.engine.full + [{"check_id": "NEW-CHECK", "scenario": {
+        "capacity": 1, "steps": [{"op": "available", "args": [], "expected": 1}]}}]
+    response = action(client, match_id, tokens["operator"], "finalize")
+    assert response.status_code == 409
+    assert "Legacy task checks changed" in response.json()["error"]["message"]

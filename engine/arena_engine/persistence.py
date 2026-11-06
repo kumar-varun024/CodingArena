@@ -29,6 +29,11 @@ class Store:
                     digest TEXT NOT NULL, response TEXT NOT NULL, status INTEGER NOT NULL,
                     PRIMARY KEY(actor, endpoint, request_id));
             """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(artifacts)")}
+            if "content_type" not in columns:
+                db.execute("ALTER TABLE artifacts ADD COLUMN content_type TEXT NOT NULL DEFAULT 'text/plain'")
+            if "filename" not in columns:
+                db.execute("ALTER TABLE artifacts ADD COLUMN filename TEXT NOT NULL DEFAULT ''")
         os.chmod(self.path, 0o600)
 
     @contextmanager

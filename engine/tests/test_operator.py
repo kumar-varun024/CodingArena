@@ -121,3 +121,98 @@ def test_http_error_is_json_stdout_with_failure_exit_code(tmp_path, monkeypatch,
     captured = capsys.readouterr()
     assert captured.out == payload.decode() + "\n"
     assert "request_id=" in captured.err
+
+
+@pytest.mark.parametrize("command,expected_endpoint,expected_fields", [
+    (["decision", "--match", "m1", "--challenge", "c1", "--disposition", "accepted",
+      "--reason", "confirmed", "--source-kind", "fixture"],
+     "/matches/m1/challenges/c1/decision", {"disposition": "accepted", "reason": "confirmed"}),
+    (["select", "--match", "m1", "--selection", "neither", "--reason", "no eligible candidate",
+      "--source-kind", "fixture"],
+     "/matches/m1/selection", {"selection": "neither", "candidate_id": None,
+                               "expected_evidence_key": None, "reason": "no eligible candidate"}),
+])
+def test_new_human_mutations_use_journal_and_fixture_source(
+        tmp_path, monkeypatch, capsys, command, expected_endpoint, expected_fields):
+    root, settings = cli(tmp_path)
+    args = root.parse_args(["operator", *command])
+    sent = []
+
+    def fail(request, timeout):
+        sent.append(request)
+        raise URLError("offline")
+
+    monkeypatch.setattr(operator_cli, "urlopen", fail)
+    assert operator_cli.run(args, settings) == 1
+    request = sent[0]
+    body = json.loads(request.data)
+    assert request.full_url.endswith("/api/v1" + expected_endpoint)
+    assert body["source"]["kind"] == "fixture"
+    assert {key: body[key] for key in expected_fields} == expected_fields
+    journal = next((settings.state_dir / "operator-requests").glob("*.json"))
+    assert TOKEN not in journal.read_text()
+    assert json.loads(journal.read_text())["body"] == body
+    capsys.readouterr()
+
+
+def test_select_a_journals_candidate_and_evidence_key(tmp_path, monkeypatch, capsys):
+    root, settings = cli(tmp_path)
+    key = {"candidate_digest": "sha256:a", "runner_digest": "sha256:b",
+           "spec_digest": "sha256:c", "suite_digest": "sha256:d"}
+    key_file = tmp_path / "key.json"
+    key_file.write_text(json.dumps(key))
+    args = root.parse_args(["operator", "select", "--match", "m1", "--selection", "a",
+                            "--candidate", "cand-a", "--evidence-key", str(key_file), "--reason", "ready"])
+    captured = []
+    monkeypatch.setattr(operator_cli, "urlopen", lambda request, timeout: captured.append(request) or
+                        (_ for _ in ()).throw(URLError("offline")))
+    assert operator_cli.run(args, settings) == 1
+    assert json.loads(captured[0].data)["expected_evidence_key"] == key
+    assert json.loads(captured[0].data)["candidate_id"] == "cand-a"
+    capsys.readouterr()
+
+
+def test_export_downloads_fixed_names_and_exact_bytes_for_neither(tmp_path, monkeypatch, capsys):
+    root, settings = cli(tmp_path)
+    match = {"phase": "complete", "outcome": {"selection": "neither", "evidence_artifact_id": "e1",
+                                                "patch_artifact_id": None}}
+    events = {"events": [{"type": "match.selected", "data": {"artifacts": {
+        "evidence.json": "e1", "summary.md": "s1"}}}]}
+    replies = {"/matches/m1": json.dumps(match).encode(), "/events?after=0": json.dumps(events).encode(),
+               "/artifacts/e1": b'{"verbatim": true}', "/artifacts/s1": b"decision\n"}
+    requests = []
+
+    def respond(request, timeout):
+        requests.append(request)
+        path = request.full_url.split("/api/v1", 1)[1]
+        value = next((body for suffix, body in replies.items() if path.endswith(suffix)), None)
+        assert value is not None, path
+        return Response(value)
+
+    monkeypatch.setattr(operator_cli, "urlopen", respond)
+    args = root.parse_args(["operator", "export", "--match", "m1"])
+    assert operator_cli.run(args, settings) == 0
+    output = settings.state_dir / "exports" / "m1"
+    assert (output / "evidence.json").read_bytes() == b'{"verbatim": true}'
+    assert (output / "summary.md").read_bytes() == b"decision\n"
+    assert not (output / "candidate.patch").exists()
+    assert len(requests) == 4
+    assert TOKEN not in capsys.readouterr().out
+
+
+def test_export_refuses_different_existing_file(tmp_path, monkeypatch, capsys):
+    root, settings = cli(tmp_path)
+    match = {"phase": "complete", "outcome": {"selection": "neither", "evidence_artifact_id": "e1"}}
+    events = {"events": [{"type": "match.selected", "data": {"artifacts": {"summary.md": "s1"}}}]}
+    replies = {"/matches/m1": json.dumps(match).encode(), "/events?after=0": json.dumps(events).encode(),
+               "/artifacts/e1": b"evidence", "/artifacts/s1": b"summary"}
+    monkeypatch.setattr(operator_cli, "urlopen", lambda request, timeout: Response(
+        next(body for suffix, body in replies.items() if request.full_url.endswith(suffix))))
+    output = tmp_path / "exports"
+    output.mkdir()
+    (output / "summary.md").write_bytes(b"different")
+    args = root.parse_args(["operator", "export", "--match", "m1", "--output", str(output)])
+    with pytest.raises(FileExistsError):
+        operator_cli.run(args, settings)
+    assert (output / "summary.md").read_bytes() == b"different"
+    capsys.readouterr()

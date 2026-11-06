@@ -1,1 +1,1 @@
-"""Coding Arena local engine; Sprint 1 foundation."""
+"""Coding Arena local engine for frozen submissions and human-led review."""

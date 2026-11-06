@@ -1,6 +1,6 @@
-# Local setup — Sprint 2
+# Local setup — Sprint 3
 
-Run from the CodingArena repository root. Tested on Linux with Python 3.12.14 and Docker Engine 29.9.3; Python 3.11+ is the intended baseline, with other versions not yet verified. The default Docker image is pinned by digest; Docker must be accessible to the user running the engine.
+Run from the CodingArena repository root. Tested on Linux with Python 3.12.14 and Docker Engine 29.9.3; Python 3.11+ is the intended baseline, with other versions not yet verified. Docker must be accessible to the user running the engine.
 
 Use a fresh runtime directory for the interactive session, separate from fixture smoke states, and keep this environment variable in both server and operator terminals:
 
@@ -21,9 +21,9 @@ PYTHONPATH=engine .venv/bin/python -m arena_engine init
 PYTHONPATH=engine .venv/bin/python -m arena_engine doctor
 ```
 
-`contract` verifies the frozen manifest digest. `init` creates the marked state directory, task base, separate `workers/a/worktree` and `workers/b/worktree` clones, and 0600 token files. It prints the operator token file path, not the token. Store the state under the gitignored `var/` by default; do not copy token values into prompts or logs. Repeated initialization reuses state and tokens. Initialization refuses an unmarked nonempty directory and any state with an active match.
+`contract` verifies the frozen manifest digest. `init` creates the marked state directory, task base, separate slot worktree clones, and token files with mode `0600`. It prints the operator token file path, not the token. Store runtime state under the gitignored `var/` by default; do not copy token values into prompts or logs. Repeated initialization reuses state and tokens. Initialization refuses an unmarked nonempty directory and any state with an active match.
 
-`doctor` reports Docker/image readiness and whether state is initialized. It exits 0 when those preflight checks pass and never prints credentials. The running service health endpoint also reflects worker startup failures. Start the API and verification worker with:
+`doctor` reports Docker/image readiness and whether state is initialized. It exits 0 when those preflight checks pass and never prints credentials. Start the API and verification worker with:
 
 ```sh
 PYTHONPATH=engine .venv/bin/python -m arena_engine serve
@@ -32,7 +32,7 @@ curl http://127.0.0.1:8765/api/v1/health
 
 The server defaults to `127.0.0.1:8765`; `serve --host HOST --port PORT` changes the bind address. Only one engine server can own a state directory at a time.
 
-## Configuration
+## Configuration and runtime state
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -40,48 +40,65 @@ The server defaults to `127.0.0.1:8765`; `serve --host HOST --port PORT` changes
 | `ARENA_RUNNER_IMAGE` | pinned image digest above | Prepared Python runner image; mutable tags are rejected |
 | `ARENA_API_URL` | `http://127.0.0.1:8765` | Operator CLI server URL |
 
-Use a separate state directory for each match after either slot has changed its worktree. The engine never silently resets a slot checkout. Existing match history and snapshots remain in their original state directory.
+The declared build budget is advisory; the engine does not measure provider cost or enforce generation quotas. Use a separate state directory for a later match after either slot has changed its worktree. The engine never silently resets a slot checkout. Keep existing state directories when their match history and snapshots are needed.
 
-## Operator commands
+## Operator workflow
 
-The CLI uses the operator token at `auth/operator.token` and sends it in memory as a bearer credential:
+Create a match, read assignments with the respective slot tokens, and have both slots commit and submit their allowed source file. The operator waits for both verification jobs to become terminal before reveal. Once revealed, slots can inspect exact opponent snapshots and submit bounded scenario challenges during review. Each challenge is checked against the private reference and then run against its exact frozen target twice. Invalid or not-reproduced challenges are rejected automatically. Inconclusive challenges remain pending until the operator rejects them with a reason or cancels the match; they can be retried.
+
+Both slots must complete review against the exact opponent candidate. The operator may accept only a reproduced challenge. Acceptance updates the common regression suite and invalidates both candidates' earlier evidence. After every challenge is resolved and both reviews are complete, the operator may start a repair round. Each slot submits once; the queued repair verification waits for both submissions. The match returns to decision when both verifications finish. The repair cap is chosen at creation and cannot exceed two rounds. If verification infrastructure fails, use `finalize` from decision to rerun the unchanged candidate snapshots without spending a repair round.
+
+Example operator commands:
 
 ```sh
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator create \
-  --label-a "Agent A" --label-b "Agent B"
+  --label-a "Agent A" --label-b "Agent B" --budget-minutes 10 --max-repair-rounds 2
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator match --match MATCH_ID
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator job --id JOB_ID
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action reveal --reason "Initial jobs finished"
+  --match MATCH_ID --action reveal --reason "Both initial jobs are terminal"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator decision \
+  --match MATCH_ID --challenge CHALLENGE_ID --disposition accepted \
+  --reason "The reproduced scenario violates the cited requirement"
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action cancel --reason "Operator cancellation"
+  --match MATCH_ID --action start_repair --reason "Review is resolved"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
+  --match MATCH_ID --action finalize --reason "Rerun current candidates"
 ```
 
-Create/action requests are journaled in `operator-requests/<request_id>.json` before sending; the file stores the exact request body and no token. A timeout or connection failure leaves the result unknown. Retry with the same request ID and body:
+Selection from decision requires the latest eligible candidate and its exact current evidence key. Save that key object from the match response as JSON, then pass its file to the CLI:
+
+```sh
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
+  --match MATCH_ID --selection a --candidate CANDIDATE_ID \
+  --evidence-key var/evidence-key.json --reason "Current evidence supports selection"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
+  --match MATCH_ID --selection neither --reason "Neither candidate is eligible"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator export --match MATCH_ID
+```
+
+`export` downloads `evidence.json`, `summary.md`, and `candidate.patch` when a candidate was selected, by default under `<state_dir>/exports/<match-id>/`. Use `--output DIR` for another destination. It refuses to overwrite different files. The common evidence pack excludes private practice jobs/events. No patch is exported for neither, and the service never applies a patch automatically.
+
+Mutations accept `--request-id UUID`, `--room-id`, `--message-id`, and `--note`. Before sending, the CLI journals the exact canonical request body and endpoint under `operator-requests/<request_id>.json` with mode `0600`; the journal contains no token. A timeout or connection failure leaves the result unknown. Retry with the same ID and body:
 
 ```sh
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator retry --request-id REQUEST_UUID
 ```
 
-Mutations also accept `--request-id UUID`, `--room-id`, `--message-id` and `--note`. Room/message IDs are context, not verified Switch authentication. `--source-kind fixture` explicitly labels scripted fixture operator actions; human CLI actions default to `operator_recorded`. A received error is a conclusive result for that ID; after fixing its cause use a new operation ID. A transport timeout always retries the original ID.
+A received error is conclusive for that operation; after fixing its cause use a new request ID. A transport timeout always retries the original request. Source room/message IDs are context, not verified Switch authentication. CLI operator actions default to `operator_recorded`; use `--source-kind fixture` for scripted fixture operations.
 
-Only `reveal` and `cancel` actions are implemented in Sprint 2. Review, repair, finalize, and selection actions belong to Sprint 3. The API exposes token-scoped assignments and jobs; use the corresponding slot token for each agent. Workspaces are stable under `workers/{a,b}` and candidates must commit their allowed `src/booking.py` changes before submission.
+## Checks and fixture smoke
 
-## Checks and live fixture smoke
-
-Run the local suite and optional fixture Docker check:
+Run the deterministic engine fixture workflows against a real local HTTP server and Docker runner:
 
 ```sh
-.venv/bin/python -m pytest -q engine/tests
-ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests/test_runner.py
+.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint3-api-snapshot.json
+.venv/bin/python scripts/smoke_engine.py --full-match --snapshot contracts/sprint3-api-snapshot.json
+.venv/bin/python scripts/smoke_engine.py --neither
 ```
 
-Practice verification executes 7 public checks. Official initial verification executes 11 baseline checks: those 7 public checks, 3 hidden checks, and BOOK-07 instance isolation. Hidden sources stay engine-owned. The official candidate status stays pending until Sprint 3 review and eligibility handling are implemented.
+Each invocation creates an isolated `var/smoke-*` state and does not reset existing state. The full-match fixture covers challenge reproduction and rejection, review, accepted regressions, repair, exact evidence-key selection, and export. The neither fixture keeps both candidates broken through the repair cap and verifies `neither` selection. The snapshot contains non-secret HTTP response samples for API/client comparison. These workflows use labeled fixtures; they are not a live Switch agent match and do not establish B-client integration. Do not report them as native-agent evidence or as final product completion.
 
-For an end-to-end fixture run through a real local HTTP server and Docker runner:
+The v1 interface remains frozen in `contracts/arena-v1.json`, with its digest recorded in the contract loader. Sprint 3 did not change the manifest or its hash.
 
-```sh
-.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint2-api-snapshot.json
-```
-
-The script creates a fresh `var/smoke-*` state, uses known-good and known-bad fixture implementations, checks API projections and request idempotency, runs practice and official jobs, reveals, and cancels. It does not touch existing state, use a Switch session, or exercise B's client. Its non-secret API response snapshot is for B to compare against. This fixture smoke does not count as live native-agent evidence.
+Run all checks, including the actual Docker tests, with `ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests`. Tests without this variable explicitly skip Docker tests; a skip is not execution evidence.

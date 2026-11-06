@@ -9,7 +9,7 @@ The two development roles build one product. Runtime contestants are separate na
 | 3 — Full match | Reproduction, adjudication, shared suite, repair, recovery, guarded selection and exports | Review/repair/decision UI, bridge commands, errors and fixture scenarios | Automated fixture match passes; invalid claims, stale evidence, runner errors and neither outcomes tested |
 | 4 — Integration and demo | Combine ready branches, run shared checks, verify exported patch on fresh task base | Complete native Switch setup, demo and experience docs | Genuine human + two-agent match recorded; patch applies and passes recorded suite; limitations documented |
 
-Current sprint: **2 — First working flow**. A's engine flow is implemented and verified. B's real-client checkpoint and shared contract-hash confirmation remain pending; the shared sprint gate is not yet complete.
+Current sprint: **3 — Full match**. A's engine workflow is implemented and verified with labelled fixtures. B's real-client checkpoint and shared contract-hash confirmation remain pending. Sprint 4 combines both ready feature branches only when the user initiates that integration phase.
 
 ## Sprint 1 scope
 
@@ -36,6 +36,17 @@ Current sprint: **2 — First working flow**. A's engine flow is implemented and
 - `.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint2-api-snapshot.json`: actual HTTP/operator-CLI/Docker flow passed. Known-good fixture passed, repeat-cancel fixture failed, private projections/idempotency/reveal/cancel behaved as expected. [Observed API samples](../contracts/sprint2-api-snapshot.json) are labelled fixture clients against the live engine.
 - Startup marks interrupted running jobs error, resumes queued work only after successful state-scoped orphan cleanup, and holds an exclusive server lock. Same-snapshot recovery finalization remains Sprint 3.
 - Contract version/hash and dependencies are unchanged. No B-owned files, native Switch runtime or B client were exercised. A's engine is ready for B's Sprint 2 API checkpoint; this is not the complete arena workflow.
+
+## Sprint 3 engine evidence (2026-11-06)
+
+- All v1 challenge, review-complete, adjudication, repair/finalize and selection endpoints are implemented. Operator CLI decisions/selections are journalled; exports download exact evidence/summary/patch bytes without applying code.
+- Reproduction checks the pinned reference and exact frozen opponent twice. Infrastructure uncertainty remains inconclusive/pending. Acceptance adds a deduplicated shared regression and marks both old candidate results stale.
+- Repairs accept one snapshot per slot per round, including unchanged code, and defer full verification until both arrive. Finalization from decision reruns unchanged candidates without another repair round. Latest exact evidence and eligible status guard selection.
+- `ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests`: **99 passed**, no skips; one upstream Starlette HTTPX deprecation warning.
+- Real HTTP/operator-CLI/Docker selected fixture smoke passed: reproduced BOOK-04, rejected a boolean/integer expectation mismatch against reference, accepted regression, one repair, 12 full checks per latest candidate, stale selection refusal and export. The exported patch applied to a fresh disposable task base and passed all 12 checks there.
+- Real `--neither` smoke kept both candidates broken through two repair rounds, enforced the cap, and exported evidence/summary with no patch. No mandatory winner was introduced.
+- [Sprint 3 API samples](../contracts/sprint3-api-snapshot.json) record labelled fixture interactions against the live engine. Shared exports exclude private practice jobs/events; tokens, private reference source and held-out source are not included.
+- Canonical contract and dependencies are unchanged. No B-owned files or live Switch agents were used. The engine side is ready for the combined integration checkpoint; the product remains incomplete until both branches and the genuine native-agent workflow are verified in Sprint 4.
 
 ## Integration sequence (Sprint 4 only)
 

@@ -10,7 +10,7 @@ from starlette.exceptions import HTTPException
 
 from .contract import load_contract
 from .errors import ArenaError
-from .models import Action, CreateMatch, Submit
+from .models import Action, CreateMatch, Submit, ChallengeRequest, ChallengeDecision, ReviewComplete, Selection
 from .runtime import Settings
 from .service import Engine
 from .workspaces import WorkspaceError
@@ -108,10 +108,30 @@ def create_app(settings=None, runner=None, start_worker=True) -> FastAPI:
     def job(job_id: str, who: Actor):
         return engine.get_job(who, job_id)
 
+    @app.post("/api/v1/matches/{match_id}/challenges")
+    def challenge(match_id: str, body: ChallengeRequest, who: Actor):
+        result, status = engine.challenge(who, match_id, body.model_dump(mode="json"))
+        return JSONResponse(result, status_code=status)
+
+    @app.post("/api/v1/matches/{match_id}/reviews/{slot}/complete")
+    def review_complete(match_id: str, slot: str, body: ReviewComplete, who: Actor):
+        result, status = engine.review_complete(who, match_id, slot, body.model_dump(mode="json"))
+        return JSONResponse(result, status_code=status)
+
+    @app.post("/api/v1/matches/{match_id}/challenges/{challenge_id}/decision")
+    def decision(match_id: str, challenge_id: str, body: ChallengeDecision, who: Actor):
+        result, status = engine.adjudicate(who, match_id, challenge_id, body.model_dump(mode="json"))
+        return JSONResponse(result, status_code=status)
+
+    @app.post("/api/v1/matches/{match_id}/selection")
+    def selection(match_id: str, body: Selection, who: Actor):
+        result, status = engine.select(who, match_id, body.model_dump(mode="json"))
+        return JSONResponse(result, status_code=status)
+
     @app.get("/api/v1/artifacts/{artifact_id}")
     def artifact(artifact_id: str, who: Actor):
-        contents, filename = engine.artifact(who, artifact_id)
-        return Response(contents, media_type="text/plain", headers={
+        contents, filename, content_type = engine.artifact(who, artifact_id)
+        return Response(contents, media_type=content_type, headers={
             "Content-Disposition": f'attachment; filename="{filename}"',
             "X-Content-Type-Options": "nosniff"})
 

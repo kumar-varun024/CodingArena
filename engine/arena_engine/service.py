@@ -7,9 +7,7 @@ import json
 import os
 import shutil
 import threading
-from datetime import datetime, timezone
 from pathlib import Path
-from uuid import uuid4
 
 from .contract import ROOT, canonical_bytes, load_contract
 from .errors import ArenaError
@@ -18,24 +16,12 @@ from .runner import DockerRunner, RunnerError
 from .workspaces import WorkspaceError, freeze, read_runtime, _git
 
 
-def now():
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+from .domain import now, digest, uid, verification
+from .workflow import Workflow
+from .reproduction import reproduce
 
 
-def digest(value):
-    return hashlib.sha256(canonical_bytes(value)).hexdigest()
-
-
-def uid(prefix):
-    return prefix + "_" + uuid4().hex
-
-
-def verification(status="queued", job_id=None):
-    return {"status": status, "check_count": 0, "passed_count": 0, "failed_check_ids": [],
-            "job_id": job_id, "log_artifact_id": None, "evidence_key": None}
-
-
-class Engine:
+class Engine(Workflow):
     def __init__(self, settings, runner=None, exclusive=False):
         self.settings = settings
         self.runtime = read_runtime(settings)
@@ -113,7 +99,7 @@ class Engine:
         rows = db.execute("SELECT * FROM jobs WHERE match_id=? ORDER BY rowid", (match["match_id"],)).fetchall()
         result["jobs"] = [json.loads(row["data"]) for row in rows
                           if self._visible(actor, row["slot"], revealed,
-                                           json.loads(row["data"])["kind"] == "verification")]
+                                           json.loads(row["data"])["kind"] in ("verification", "challenge"))]
         return result
 
     def _event(self, db, match_id, actor, kind, data, slot=None, reveal_visible=False):
@@ -163,7 +149,12 @@ class Engine:
                      "created_at": at, "updated_at": at, "outcome": None,
                      "slots": {s: {"candidate": None, "review_complete": False} for s in ("a", "b")},
                      "jobs": [], "challenges": [], "_revealed": False,
-                     "_budget": body["candidate_budget_minutes"], "_provider_labels": body["provider_labels"]}
+                     "_budget": body["candidate_budget_minutes"], "_provider_labels": body["provider_labels"],
+                     "_baseline_checks": self.full, "_public_cases": self.public,
+                     "_reference": (ROOT / "fixtures/booking-v1/reference/booking.py").read_text(),
+                     "_task_spec": self.contract["booking_contract"],
+                     "_task_text": _git(self.settings.state_dir / "task-base", "show",
+                                        self.runtime["base_commit"] + ":SPEC.md").stdout}
             self.store.save_match(db, match)
             self._event(db, match_id, actor, "match.created", {"source": body["source"],
                         "provider_labels": body["provider_labels"]})
@@ -185,8 +176,8 @@ class Engine:
             target = match["slots"][other]["candidate"] if match["_revealed"] else None
             public = json.loads((ROOT / "fixtures/booking-v1/starter/public_checks.json").read_text())
             return {"match_id": match_id, "slot": slot, "task_id": "booking-v1", "phase": match["phase"],
-                    "repair_round": match["repair_round"], "task_spec": self.contract["booking_contract"],
-                    "task_text": (ROOT / "fixtures/booking-v1/SPEC.md").read_text(),
+                    "repair_round": match["repair_round"], "task_spec": match.get("_task_spec", self.contract["booking_contract"]),
+                    "task_text": match.get("_task_text", (ROOT / "fixtures/booking-v1/SPEC.md").read_text()),
                     "spec_digest": match["spec_digest"], "suite_digest": match["suite_digest"],
                     "base_commit": self.runtime["base_commit"], "allowed_files": ["src/booking.py"],
                     "candidate_budget_minutes": match["_budget"],
@@ -195,49 +186,11 @@ class Engine:
                     "target_candidate_id": target["candidate_id"] if target else None,
                     "public_checks": [entry["check_id"] for entry in public],
                     "public_check_descriptions": [entry["description"] for entry in public],
-                    "practice_endpoint": f"POST /api/v1/matches/{match_id}/practice", "accepted_challenges": []}
+                    "practice_endpoint": f"POST /api/v1/matches/{match_id}/practice",
+                    "accepted_challenges": [c for c in match["challenges"] if c["disposition"] == "accepted"]}
 
     def submit(self, actor, match_id, body, practice=False):
-        slot = body["slot"]
-        self.slot(actor, slot)
-        endpoint = f"/matches/{match_id}/" + ("practice" if practice else "submissions")
-        def operation(db):
-            match = self._match(db, match_id)
-            if match["phase"] != "building":
-                raise ArenaError("INVALID_STATE", "Submissions and practice require the building phase in Sprint 2")
-            if not practice and match["slots"][slot]["candidate"]:
-                raise ArenaError("INVALID_STATE", "This slot already submitted its initial candidate")
-            if self.worker_failed or not self.runner.available():
-                raise ArenaError("RUNNER_UNAVAILABLE", "Docker verification runner is unavailable", 503)
-            try:
-                runner_digest = self.runner.digest
-                snap = freeze(self.settings, slot, body["commit_sha"], uid("snapshot"))
-            except RunnerError as exc:
-                raise ArenaError("RUNNER_UNAVAILABLE", str(exc), 503) from exc
-            except WorkspaceError as exc:
-                raise ArenaError("STALE_SNAPSHOT", str(exc)) from exc
-            candidate_id = None if practice else uid("candidate")
-            job_id = uid("job")
-            job = {"job_id": job_id, "match_id": match_id, "kind": "practice" if practice else "verification",
-                   "candidate_id": candidate_id, "challenge_id": None, "status": "queued", "result": None, "error": None}
-            internal = {"source": snap["path"], "candidate_digest": snap["tree_digest"],
-                        "spec_digest": match["spec_digest"], "runner_digest": runner_digest,
-                        "suite_digest": self.practice_digest if practice else match["suite_digest"],
-                        "checks": self.public if practice else self.full, "include_isolation": not practice}
-            self.store.save_job(db, job, internal, slot)
-            if not practice:
-                match["slots"][slot]["candidate"] = {"candidate_id": candidate_id, "slot": slot, "revision": 1,
-                    "commit_sha": snap["commit_sha"], "tree_digest": snap["tree_digest"], "eligibility": "pending",
-                    "verification": verification(job_id=job_id)}
-            match["updated_at"] = now()
-            self.store.save_match(db, match)
-            self._event(db, match_id, actor, "practice.queued" if practice else "candidate.submitted",
-                        {"job_id": job_id, "candidate_id": candidate_id, "source": body["source"]}, slot, not practice)
-            response = {"job_id": job_id}
-            if not practice:
-                response.update(candidate_id=candidate_id, tree_digest=snap["tree_digest"])
-            return response, 202
-        return self.mutate(actor, endpoint, body, operation)
+        return self.submit_candidate(actor, match_id, body, practice)
 
     def get_job(self, actor, job_id):
         with self.store.transaction() as db:
@@ -246,7 +199,7 @@ class Engine:
                 raise ArenaError("NOT_FOUND", "Job not found", 404)
             match = self._match(db, row["match_id"])
             job = json.loads(row["data"])
-            if not self._visible(actor, row["slot"], match["_revealed"], job["kind"] == "verification"):
+            if not self._visible(actor, row["slot"], match["_revealed"], job["kind"] in ("verification", "challenge")):
                 raise ArenaError("FORBIDDEN", "Job is not visible to this slot", 403)
             return job
 
@@ -269,7 +222,7 @@ class Engine:
             path = self.settings.state_dir / "artifacts" / row["path"]
             if not path.is_file() or path.is_symlink():
                 raise ArenaError("NOT_FOUND", "Artifact is unavailable", 404)
-            return path.read_text(), artifact_id + ".log"
+            return path.read_bytes(), row["filename"] or artifact_id + ".log", row["content_type"]
 
     def action(self, actor, match_id, body):
         self.operator(actor)
@@ -297,7 +250,7 @@ class Engine:
                 for row in rows:
                     self._fail_job(db, row, match, "Match cancelled by operator")
             else:
-                raise ArenaError("INVALID_STATE", "Review, repair and finalization arrive in Sprint 3")
+                self.advance(db, match, action)
             match["updated_at"] = now()
             self.store.save_match(db, match)
             self._event(db, match_id, actor, "match." + action, {"reason": body["reason"], "source": body["source"]})
@@ -330,15 +283,21 @@ class Engine:
         job = json.loads(row["data"])
         job["status"] = "error"
         job["error"] = {"code": "RUNNER_UNAVAILABLE", "message": message, "details": {}}
-        job["result"] = verification("error", job["job_id"])
+        if job["kind"] == "challenge":
+            challenge = self._find_challenge(match, job["challenge_id"])
+            challenge["reproduction"].update(status="inconclusive", actual_summary=message,
+                                             reference_passed=None, target_failed_twice=None)
+            job["result"] = dict(challenge["reproduction"])
+        else:
+            job["result"] = verification("error", job["job_id"])
         self.store.save_job(db, job, json.loads(row["internal"]), row["slot"])
-        if job["candidate_id"]:
+        if job["kind"] == "verification":
             candidate = match["slots"][row["slot"]]["candidate"]
             if candidate and candidate["candidate_id"] == job["candidate_id"]:
                 candidate["verification"] = job["result"]
                 candidate["eligibility"] = "unknown"
         self._event(db, match["match_id"], "engine", "job.error", {"job_id": job["job_id"], "reason": message},
-                    row["slot"], job["kind"] == "verification")
+                    row["slot"], job["kind"] in ("verification", "challenge"))
 
     def _recover(self, include_queued=False, reason="Verification interrupted by engine restart; rerun required"):
         with self.store.transaction() as db:
@@ -346,13 +305,21 @@ class Engine:
             for row in db.execute("SELECT * FROM jobs WHERE status IN " + statuses).fetchall():
                 match = self._match(db, row["match_id"])
                 self._fail_job(db, row, match, reason)
+                self._update_decision(db, match)
                 match["updated_at"] = now()
                 self.store.save_match(db, match)
 
     def worker_once(self):
         with self._execution_lock:
             with self.store.transaction() as db:
-                row = db.execute("SELECT * FROM jobs WHERE status='queued' ORDER BY rowid LIMIT 1").fetchone()
+                row = None
+                for pending in db.execute("SELECT * FROM jobs WHERE status='queued' ORDER BY rowid").fetchall():
+                    pending_job = json.loads(pending["data"])
+                    pending_match = self._match(db, pending_job["match_id"])
+                    if pending_match["phase"] == "repairing" and pending_job["kind"] == "verification":
+                        continue
+                    row = pending
+                    break
                 if row is None:
                     return False
                 job, internal = json.loads(row["data"]), json.loads(row["internal"])
@@ -364,29 +331,38 @@ class Engine:
                 self._cancel.clear()
                 job["status"] = "running"
                 self.store.save_job(db, job, internal, row["slot"])
-                if job["candidate_id"]:
+                if job["kind"] == "verification":
                     match["slots"][row["slot"]]["candidate"]["verification"]["status"] = "running"
                     self.store.save_match(db, match)
+                if job["kind"] == "challenge":
+                    self._find_challenge(match, job["challenge_id"])["reproduction"]["status"] = "running"
+                    self.store.save_match(db, match)
                 self._event(db, job["match_id"], "engine", "job.running", {"job_id": job["job_id"]},
-                            row["slot"], job["kind"] == "verification")
+                            row["slot"], job["kind"] in ("verification", "challenge"))
             try:
                 source = Path(internal["source"])
                 if hashlib.sha256(source.read_bytes()).hexdigest() != internal["candidate_digest"]:
                     raise RunnerError("Frozen source digest mismatch")
                 if not self.runner.available() or self.runner.digest != internal["runner_digest"]:
                     raise RunnerError("Runner is unavailable or its identity changed")
-                result = self.runner.verify(source, internal["checks"], internal["include_isolation"], cancel_event=self._cancel)
-                expected_ids = {item["check_id"] for item in internal["checks"]}
-                if internal["include_isolation"]:
-                    expected_ids.add("HELD-BOOK-07-ISOLATION")
-                failed = result["failed_check_ids"]
-                if (type(result["check_count"]) is not int or type(result["passed_count"]) is not int
-                        or result["check_count"] != len(expected_ids)
-                        or type(failed) is not list or len(failed) != len(set(failed))
-                        or not set(failed).issubset(expected_ids)
-                        or result["passed_count"] != result["check_count"] - len(failed)
-                        or type(result["log"]) is not str or len(result["log"]) > 65536):
-                    raise RunnerError("Verification returned invalid counts or identifiers")
+                if job["kind"] == "challenge":
+                    reference = Path(internal["reference_source"])
+                    if hashlib.sha256(reference.read_bytes()).hexdigest() != internal["reference_digest"]:
+                        raise RunnerError("Frozen reference digest mismatch")
+                    result = reproduce(self.runner, reference, source, internal["scenario"], self._cancel)
+                else:
+                    result = self.runner.verify(source, internal["checks"], internal["include_isolation"], cancel_event=self._cancel)
+                    expected_ids = {item["check_id"] for item in internal["checks"]}
+                    if internal["include_isolation"]:
+                        expected_ids.add("HELD-BOOK-07-ISOLATION")
+                    failed = result["failed_check_ids"]
+                    if (type(result["check_count"]) is not int or type(result["passed_count"]) is not int
+                            or result["check_count"] != len(expected_ids)
+                            or type(failed) is not list or len(failed) != len(set(failed))
+                            or not set(failed).issubset(expected_ids)
+                            or result["passed_count"] != result["check_count"] - len(failed)
+                            or type(result["log"]) is not str or len(result["log"]) > 65536):
+                        raise RunnerError("Verification returned invalid counts or identifiers")
                 error = None
             except RunnerError as exc:
                 result, error = None, str(exc)
@@ -401,29 +377,26 @@ class Engine:
                 if error or self._cancel.is_set():
                     self._fail_job(db, current, match, error or "Verification cancelled")
                 else:
-                    artifact_id = uid("artifact")
-                    artifacts = self.settings.state_dir / "artifacts"
-                    artifacts.mkdir(exist_ok=True)
-                    path = artifacts / (artifact_id + ".log")
-                    with path.open("x") as stream:
-                        stream.write(result["log"])
-                    os.chmod(path, 0o400)
-                    db.execute("INSERT INTO artifacts VALUES(?,?,?,?,?)", (artifact_id, job["match_id"], row["slot"],
-                               path.name, int(job["kind"] == "verification")))
-                    outcome = {"status": "passed" if not result["failed_check_ids"] else "failed",
-                               "check_count": result["check_count"], "passed_count": result["passed_count"],
-                               "failed_check_ids": result["failed_check_ids"], "job_id": job["job_id"],
-                               "log_artifact_id": artifact_id,
-                               "evidence_key": {k: internal[k] for k in
-                                                ("candidate_digest", "spec_digest", "suite_digest", "runner_digest")}}
-                    job.update(status="completed", result=outcome)
-                    self.store.save_job(db, job, internal, row["slot"])
-                    if job["candidate_id"]:
-                        candidate = match["slots"][row["slot"]]["candidate"]
-                        candidate["verification"] = outcome
-                        candidate["eligibility"] = "pending" if outcome["status"] == "passed" else "ineligible"
-                    self._event(db, job["match_id"], "engine", "job.completed", {"job_id": job["job_id"], "status": outcome["status"]},
-                                row["slot"], job["kind"] == "verification")
+                    artifact_id = self._write_artifact(db, job["match_id"], row["slot"], result["log"],
+                                                       "verification.log", reveal_visible=job["kind"] != "practice")
+                    if job["kind"] == "challenge":
+                        self._finish_challenge(db, match, job, internal, row["slot"], result, artifact_id)
+                    else:
+                        outcome = {"status": "passed" if not result["failed_check_ids"] else "failed",
+                                   "check_count": result["check_count"], "passed_count": result["passed_count"],
+                                   "failed_check_ids": result["failed_check_ids"], "job_id": job["job_id"],
+                                   "log_artifact_id": artifact_id,
+                                   "evidence_key": {k: internal[k] for k in
+                                                    ("candidate_digest", "spec_digest", "suite_digest", "runner_digest")}}
+                        job.update(status="completed", result=outcome)
+                        self.store.save_job(db, job, internal, row["slot"])
+                        if job["kind"] == "verification":
+                            candidate = match["slots"][row["slot"]]["candidate"]
+                            candidate["verification"] = outcome
+                            candidate["eligibility"] = "pending" if outcome["status"] == "passed" else "ineligible"
+                        self._event(db, job["match_id"], "engine", "job.completed", {"job_id": job["job_id"], "status": outcome["status"]},
+                                    row["slot"], job["kind"] in ("verification", "challenge"))
+                self._update_decision(db, match)
                 match["updated_at"] = now()
                 self.store.save_match(db, match)
             return True
