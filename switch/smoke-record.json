@@ -1,0 +1,45 @@
+{
+  "status": "not_run",
+  "setup_disposition": "in_progress",
+  "native_round_trip_observed": false,
+  "console_version": null,
+  "runtime_kind": null,
+  "runtime_host": null,
+  "agent_provider": null,
+  "agent_model": null,
+  "registered_directory": null,
+  "addressing_configuration": null,
+  "room_id": null,
+  "human_message_id": null,
+  "agent_reply_message_id": null,
+  "command_output": null,
+  "observation": "User selected the teammate's Kali Linux machine as demo host, reports Switch Console already installed, and reports no SSH access. Setup commands will be run locally by the teammate. No remote installation, provider sign-in or native room reply has been observed by this chat.",
+  "blocker": "Await the teammate's local prerequisite/installer output and actual native room smoke evidence. Console/provider configuration must be completed on the host; no SSH access is available to this chat.",
+  "next_step": "Run the Role B runtime installer on the actual pre-initialized engine host, configure native Console and provider through their supported setup, then observe a human-addressed smoke command and real room reply for each agent.",
+  "demo_host_choice": "teammate_machine",
+  "setup_requested_at": "2026-11-06",
+  "agents": {
+    "a": {
+      "status": "not_run",
+      "registered_directory": null,
+      "room_id": null,
+      "human_message_id": null,
+      "agent_reply_message_id": null,
+      "command_output": null
+    },
+    "b": {
+      "status": "not_run",
+      "registered_directory": null,
+      "room_id": null,
+      "human_message_id": null,
+      "agent_reply_message_id": null,
+      "command_output": null
+    }
+  },
+  "host_details": {
+    "operating_system": "Kali Linux",
+    "switch_console_installed": true,
+    "ssh_access_available": false,
+    "provenance": "user_reported; not remotely verified"
+  }
+}
