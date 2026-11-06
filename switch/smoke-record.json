@@ -1,0 +1,19 @@
+{
+  "status": "not_run",
+  "setup_disposition": "user_deferred",
+  "native_round_trip_observed": false,
+  "console_version": null,
+  "runtime_kind": null,
+  "runtime_host": null,
+  "agent_provider": null,
+  "agent_model": null,
+  "registered_directory": null,
+  "addressing_configuration": null,
+  "room_id": null,
+  "human_message_id": null,
+  "agent_reply_message_id": null,
+  "command_output": null,
+  "observation": "Development workspace preflight found no switch executable on PATH and no Switch/Mattermost process names. No authenticated Console/server/room/provider session was supplied or observed. This does not establish whether Switch exists on another machine.",
+  "blocker": "User chose to set up Switch later and continue building. A designated runtime host with Switch Console/server, a signed-in provider, registered slot agents, and a human-accessible room is still required for the native smoke. This checkpoint is deferred, not failed.",
+  "next_step": "Follow docs/switch.md, retain genuine room output and IDs when available, and replace null fields only with observed values. A direct arena_smoke.py run is not a native smoke pass."
+}
