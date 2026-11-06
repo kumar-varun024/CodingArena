@@ -56,7 +56,7 @@ The following checks have passed on the merged integration tree:
 | Switch bridge | 29 tests |
 | HTTP fixture service | 10 tests |
 | Dashboard | 10 tests and production build on Node 22.23.4 |
-| Native runtime installer | 9 tests |
+| Native runtime installer | 10 tests |
 | Live dashboard client | Five read-only checks against the actual `ArenaApi`: health/version/mode, match labels, events, unknown-job 404, invalid-token 401 |
 | Browser fixture | Connected, selected neither, inspected labelled synthetic evidence; no console errors |
 | Runner recovery fixture | Injected Docker-start failures yielded unknown eligibility; finalize kept the same snapshots and repair round, then real Docker reruns passed |
@@ -91,4 +91,4 @@ node --experimental-transform-types \
   --state-dir "$ARENA_STATE_DIR" --match MATCH_ID
 ```
 
-Use the Node 22.23.4 baseline for this helper; its TypeScript-transform flag is experimental and confined to validation. The check does not interact with a browser or native agents. Browser health at interface 1.1 and a labelled fixture UI flow have been observed; authenticated live UI and native Switch agents/room replies have not. See the [Sprint gates](integration.md); do not report the native gate as complete until that evidence exists.
+Use the Node 22.23.4 baseline for this helper; its TypeScript-transform flag is experimental and confined to validation. The check does not interact with a browser or native agents. Browser health at interface 1.1 and a labelled fixture UI flow have been observed; later user-supplied screenshots show native contestant submissions and authenticated dashboard reveal, corroborated by live engine records. See the [Sprint gates](integration.md); do not report the native gate as complete until that evidence exists.
