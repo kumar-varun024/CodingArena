@@ -81,8 +81,7 @@ Runtime values (paths only; no credential contents):
 """
     header += "\n".join(f"- `{key}` = `{value}`" for key, value in values.items())
     footer = "\n\n## Commands on this runtime host\n\n"
-    footer += "Run from the registered Directory. These commands require a POSIX shell; request OS-specific instructions if this host uses another shell:\n\n```sh\n"
-    footer += "cd -- " + shlex.quote(str(root)) + "\n"
+    footer += "Run from the registered Directory. Do not change directories before the smoke command: a mismatch must remain visible. These commands require a POSIX shell; request OS-specific instructions if this host uses another shell:\n\n```sh\n"
     footer += command(["python3", str(smoke), "--expected-root", str(root)]) + "\n"
     footer += command(["python3", *arguments, "assignment", "--match", "MATCH_ID_PROVIDED_BY_OPERATOR", "--slot", slot]) + "\n```\n"
     footer += "\nThe helper output alone proves only a local command. A native smoke passes only after an actual human-addressed Switch request, native execution and observed room reply. This installer never records a native smoke pass.\n"

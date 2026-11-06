@@ -13,8 +13,8 @@
   "human_message_id": null,
   "agent_reply_message_id": null,
   "command_output": null,
-  "observation": "User requested completion of Role B Switch setup and selected the teammate's machine as the demo host. No connection to that machine or authenticated Console/room/provider session has yet been supplied. Local preflight found no Console installation; Docker Engine 29.1.3 is reachable outside the restricted tool sandbox, but docker compose is unavailable here. These local findings do not describe the teammate's machine.",
-  "blocker": "Await teammate host OS, Console installation state and available SSH/server access. A must provide actual pre-created worker roots on that host. Native room round trips remain unobserved.",
+  "observation": "User selected the teammate's Kali Linux machine as demo host, reports Switch Console already installed, and reports no SSH access. Setup commands will be run locally by the teammate. No remote installation, provider sign-in or native room reply has been observed by this chat.",
+  "blocker": "Await the teammate's local prerequisite/installer output and actual native room smoke evidence. Console/provider configuration must be completed on the host; no SSH access is available to this chat.",
   "next_step": "Run the Role B runtime installer on the actual pre-initialized engine host, configure native Console and provider through their supported setup, then observe a human-addressed smoke command and real room reply for each agent.",
   "demo_host_choice": "teammate_machine",
   "setup_requested_at": "2026-11-06",
@@ -35,5 +35,11 @@
       "agent_reply_message_id": null,
       "command_output": null
     }
+  },
+  "host_details": {
+    "operating_system": "Kali Linux",
+    "switch_console_installed": true,
+    "ssh_access_available": false,
+    "provenance": "user_reported; not remotely verified"
   }
 }
