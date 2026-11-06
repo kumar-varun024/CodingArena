@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from arena_engine.api import create_app
-from arena_engine.contract import ROOT, CONTRACT_SHA256, canonical_bytes, load_contract
+from arena_engine.contract import ROOT, CONTRACT_SHA256, LEGACY_CONTRACT_SHA256, canonical_bytes, load_contract
 from arena_engine.driver import validate_scenario
 from arena_engine.runtime import DEFAULT_IMAGE, Settings, runtime_status
 
@@ -14,7 +14,10 @@ from arena_engine.runtime import DEFAULT_IMAGE, Settings, runtime_status
 def test_frozen_contract_and_canonical_types(tmp_path):
     contract = load_contract()
     assert hashlib.sha256(canonical_bytes(contract)).hexdigest() == CONTRACT_SHA256
-    assert contract["contract_version"] == "1.0"
+    assert contract["contract_version"] == "1.1"
+    legacy = load_contract(ROOT / "contracts/arena-v1.json")
+    assert legacy["contract_version"] == "1.0"
+    assert hashlib.sha256(canonical_bytes(legacy)).hexdigest() == LEGACY_CONTRACT_SHA256
     assert canonical_bytes({"expected": True}) != canonical_bytes({"expected": 1})
     changed = tmp_path / "changed.json"
     changed.write_text(json.dumps({**contract, "contract_version": "2.0"}))
@@ -26,7 +29,7 @@ def test_health_matches_manifest_and_unknown_route_is_json(tmp_path):
     with TestClient(create_app(settings=Settings(tmp_path / "uninitialized", DEFAULT_IMAGE))) as client:
         response = client.get("/api/v1/health")
         assert response.status_code == 200
-        assert response.json() == {"api_version": "1.0", "mode": "live",
+        assert response.json() == {"api_version": "1.1", "mode": "live",
                                    "runner_available": False, "status": "ok"}
         missing = client.get("/api/v1/unknown-route")
         assert missing.status_code == 404

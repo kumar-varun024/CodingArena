@@ -140,6 +140,13 @@ def run_instance_isolation(factory: Any) -> dict[str, Any]:
             ("first availability", first.available, 2),
             ("second retains only its booking", second.reservations, {"second": 2}),
             ("second availability", second.available, 1),
+            ("cancel first booking", lambda: first.cancel("first"), True),
+            ("second survives first cancellation", second.reservations, {"second": 2}),
+            ("second availability after first cancellation", second.available, 1),
+            ("restore first booking", lambda: first.book("first", 1), True),
+            ("cancel second booking", lambda: second.cancel("second"), True),
+            ("first survives second cancellation", first.reservations, {"first": 1}),
+            ("first availability after second cancellation", first.available, 2),
         )
         for label, operation, expected in checks:
             actual = operation()

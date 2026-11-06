@@ -27,11 +27,34 @@ def main():
     parser.add_argument("--snapshot", type=Path, help="save observed non-secret response samples")
     parser.add_argument("--full-match", action="store_true", help="exercise challenge/repair/selection/export")
     parser.add_argument("--neither", action="store_true", help="keep both fixtures broken through two repairs")
+    parser.add_argument("--bridge-cli", action="store_true",
+                        help="route supported slot requests through the real stdlib Switch bridge CLI")
+    parser.add_argument("--runner-recovery", action="store_true",
+                        help="inject isolated Docker start failures, finalize unknown candidates, and rerun")
     args = parser.parse_args()
+    if args.runner_recovery and args.neither:
+        parser.error("--runner-recovery cannot be combined with --neither")
     state = ROOT / "var" / ("smoke-" + uuid4().hex)
     env = {**os.environ, "ARENA_STATE_DIR": str(state), "PYTHONPATH": str(ROOT / "engine")}
     subprocess.run([sys.executable, "-m", "arena_engine", "init"], env=env, cwd=ROOT,
                    check=True, capture_output=True)
+    if args.runner_recovery:
+        shim_dir = state / "fixture-bin"
+        shim_dir.mkdir()
+        marker = state / "inject-runner-start-failure"
+        shim = shim_dir / "docker"
+        shim.write_text("#!/usr/bin/env python3\n"
+                        "import os, sys\n"
+                        "from pathlib import Path\n"
+                        f"marker = Path({str(marker)!r})\n"
+                        "if len(sys.argv) > 1 and sys.argv[1] == 'start' and marker.exists():\n"
+                        "    evidence = 'FIXTURE_INJECTED_DOCKER_START_FAILURE: scoped smoke fault'\n"
+                        "    marker.with_suffix('.observed').write_text(evidence + '\\n')\n"
+                        "    print(evidence, file=sys.stderr)\n"
+                        "    raise SystemExit(125)\n"
+                        "os.execv('/usr/bin/docker', ['/usr/bin/docker', *sys.argv[1:]])\n")
+        shim.chmod(0o700)
+        env["PATH"] = str(shim_dir) + os.pathsep + env.get("PATH", "")
     tokens = {"operator": (state / "auth/operator.token").read_text().strip()}
     tokens.update({s: (state / f"workers/{s}/.arena/slot.token").read_text().strip() for s in ("a", "b")})
     with socket.socket() as sock:
@@ -39,8 +62,51 @@ def main():
         port = sock.getsockname()[1]
     responses = []
 
+    def bridge_request(role, path, method, body, expected):
+        """Run supported slot operations through the actual bridge executable."""
+        if not args.bridge_cli or role not in {"a", "b"} or expected not in {200, 201, 202}:
+            return None
+        parts = path.strip("/").split("/")
+        if len(parts) >= 4 and parts[0] == "matches" and parts[2] == "assignments" and method == "GET":
+            command = ["assignment", "--match", parts[1], "--slot", parts[3]]
+        elif len(parts) == 2 and parts[0] == "matches" and method == "GET":
+            command = ["match", "--id", parts[1]]
+        elif len(parts) == 2 and parts[0] == "jobs" and method == "GET":
+            command = ["job", "--id", parts[1]]
+        elif len(parts) == 3 and parts[0] == "matches" and parts[2] in {"practice", "submissions"} and method == "POST":
+            command = ["check" if parts[2] == "practice" else "submit", "--match", parts[1],
+                       "--slot", body["slot"], "--commit", body["commit_sha"]]
+        elif len(parts) == 3 and parts[0] == "matches" and parts[2] == "challenges" and method == "POST":
+            challenge_path = state / "workers" / role / ".arena" / ("challenge-" + body["request_id"] + ".json")
+            challenge_path.parent.mkdir(parents=True, exist_ok=True)
+            challenge_path.write_text(json.dumps({key: body[key] for key in ("title", "requirement_ids", "scenario")},
+                                                 separators=(",", ":")))
+            command = ["challenge", "--match", parts[1], "--target", body["target_candidate_id"],
+                       "--file", str(challenge_path)]
+        elif (len(parts) == 5 and parts[0] == "matches" and parts[2] == "reviews"
+              and parts[4] == "complete" and method == "POST"):
+            command = ["review-done", "--match", parts[1], "--slot", parts[3],
+                       "--target", body["target_candidate_id"]]
+        else:
+            return None
+        cli = ROOT / "switch_bridge" / "arena_client.py"
+        token_file = state / "workers" / role / ".arena" / "slot.token"
+        call = [sys.executable, str(cli), "--api-url", f"http://127.0.0.1:{port}",
+                "--token-file", str(token_file), "--state-dir", str(state / "workers" / role / ".arena" / "client-state"),
+                *command]
+        if method == "POST":
+            call.extend(["--request-id", body["request_id"], "--source-kind", "fixture",
+                         "--source-note", SOURCE["note"]])
+        result = subprocess.run(call, env=env, cwd=ROOT, check=True, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
     def request(role, path, body=None, expected=200, record=True):
         method = "POST" if body is not None else "GET"
+        bridged = bridge_request(role, path, method, body, expected)
+        if bridged is not None:
+            if record:
+                responses.append({"role": role, "method": method, "path": path, "status": expected, "body": bridged})
+            return bridged
         headers = {"Authorization": "Bearer " + tokens[role], "Content-Type": "application/json"}
         req = Request(f"http://127.0.0.1:{port}/api/v1" + path, method=method, headers=headers,
                       data=json.dumps(body).encode() if body is not None else None)
@@ -61,6 +127,18 @@ def main():
         return {"request_id": str(uuid4()), "source": SOURCE, **fields}
 
     def wait(role, job_id):
+        if args.bridge_cli and role in {"a", "b"}:
+            # The bridge's bounded wait retains the smoke's original 120 second deadline.
+            call = [sys.executable, str(ROOT / "switch_bridge" / "arena_client.py"),
+                    "--api-url", f"http://127.0.0.1:{port}", "--token-file",
+                    str(state / "workers" / role / ".arena" / "slot.token"), "--state-dir",
+                    str(state / "workers" / role / ".arena" / "client-state"), "job", "--id", job_id,
+                    "--wait", "--timeout", "120"]
+            result = subprocess.run(call, env=env, cwd=ROOT, check=True, capture_output=True, text=True)
+            job = json.loads(result.stdout)
+            responses.append({"role": role, "method": "GET", "path": "/jobs/" + job_id,
+                              "status": 200, "body": job})
+            return job
         deadline = time.monotonic() + 120
         while time.monotonic() < deadline:
             job = request(role, "/jobs/" + job_id, record=False)
@@ -144,18 +222,27 @@ def main():
                 assert (Path(assignment["review_path"]) / "src/booking.py").is_file()
             request("a", "/jobs/" + submitted["b"]["job_id"])
             final = None
-            if args.full_match or args.neither:
-                final = full_match(request, wait, mutation, match_id, submitted, shas, state, env, port, args.neither)
+            if args.full_match or args.neither or args.runner_recovery:
+                final = full_match(request, wait, mutation, match_id, submitted, shas, state, env, port,
+                                   args.neither, args.runner_recovery, responses)
             else:
                 request("operator", f"/matches/{match_id}/actions", mutation(action="cancel", reason="Sprint 2 fixture smoke finished"))
             if args.snapshot:
                 args.snapshot.parent.mkdir(parents=True, exist_ok=True)
-                args.snapshot.write_text(json.dumps({"label": "Deterministic fixture clients against live HTTP/Docker; no Switch agents",
-                                                      "responses": responses}, indent=2) + "\n")
+                snapshot = {"label": "Deterministic fixture clients against live HTTP/Docker; no Switch agents",
+                            "responses": responses}
+                if args.runner_recovery:
+                    snapshot["label"] = "Injected Docker start failure recovery verified against live Docker; fixture clients; no Switch agents"
+                    snapshot["runner_recovery_checked"] = True
+                    snapshot["runner_recovery_evidence"] = "FIXTURE_INJECTED_DOCKER_START_FAILURE: scoped smoke fault"
+                args.snapshot.write_text(json.dumps(snapshot, indent=2) + "\n")
             print(json.dumps({"mode": "fixture_smoke_live_engine", "match_id": match_id,
                               "practice_checks": practiced["result"]["check_count"],
                               "official_checks_per_candidate": jobs["a"]["result"]["check_count"],
                               "a": jobs["a"]["result"]["status"], "b": jobs["b"]["result"]["status"],
+                              "runner_recovery_checked": bool(args.runner_recovery),
+                              "runner_recovery_evidence": ("FIXTURE_INJECTED_DOCKER_START_FAILURE: scoped smoke fault"
+                                                            if args.runner_recovery else None),
                               "reveal": "passed", "outcome": final, "state_dir": str(state)}))
         finally:
             server.terminate()
@@ -166,7 +253,9 @@ def main():
                 server.wait()
 
 
-def full_match(request, wait, mutation, match_id, submitted, shas, state, env, port, neither):
+def full_match(request, wait, mutation, match_id, submitted, shas, state, env, port, neither,
+               runner_recovery=False, responses=None):
+    responses = responses if responses is not None else []
     path = f"/matches/{match_id}"
     scenario = json.loads((ROOT / "fixtures/booking-v1/known-bad/scenarios/repeat_cancel.json").read_text())["scenario"]
     report = request("a", path + "/challenges", mutation(target_candidate_id=submitted["b"]["candidate_id"],
@@ -202,12 +291,55 @@ def full_match(request, wait, mutation, match_id, submitted, shas, state, env, p
             subprocess.run(["git", "add", "--", "src/booking.py"], cwd=workspace, check=True, capture_output=True)
             subprocess.run(["git", "commit", "-qm", "Labelled fixture repair"], cwd=workspace, check=True, capture_output=True)
             shas["b"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=workspace, text=True).strip()
-        repaired = {slot: request(slot, path + "/submissions", mutation(slot=slot, commit_sha=shas[slot]), 202)
-                    for slot in ("a", "b")}
-        for slot in ("a", "b"):
-            job = wait(slot, repaired[slot]["job_id"])
-            assert job["result"]["check_count"] == 12, job
-            assert job["result"]["status"] == ("failed" if neither else "passed"), job
+        if runner_recovery and round_number == 1:
+            marker = state / "inject-runner-start-failure"
+            marker.touch(mode=0o600)
+            try:
+                repaired = {slot: request(slot, path + "/submissions", mutation(slot=slot, commit_sha=shas[slot]), 202)
+                            for slot in ("a", "b")}
+                failed_jobs = {slot: wait(slot, repaired[slot]["job_id"]) for slot in ("a", "b")}
+                assert all(job["status"] == "error" and job["result"]["status"] == "error"
+                           for job in failed_jobs.values()), failed_jobs
+                evidence_path = marker.with_suffix(".observed")
+                evidence = evidence_path.read_text().strip()
+                assert evidence == "FIXTURE_INJECTED_DOCKER_START_FAILURE: scoped smoke fault", evidence
+                responses.append({"role": "fixture", "method": "INJECT", "path": "docker start",
+                                  "status": 125, "body": {"evidence": evidence,
+                                  "jobs": {slot: job["job_id"] for slot, job in failed_jobs.items()}}})
+            finally:
+                marker.unlink(missing_ok=True)
+            unknown = request("operator", path)
+            assert unknown["phase"] == "decision", unknown["phase"]
+            assert all(entry["candidate"]["eligibility"] == "unknown"
+                       for entry in unknown["slots"].values()), unknown["slots"]
+            assert unknown["repair_round"] == round_number, unknown["repair_round"]
+            stable = {slot: {key: unknown["slots"][slot]["candidate"][key]
+                             for key in ("candidate_id", "commit_sha", "tree_digest", "revision")}
+                      for slot in ("a", "b")}
+            finalized = operator("action", "--match", match_id, "--action", "finalize",
+                                 "--reason", "Fixture operator reruns unknown candidates after transient runner failure",
+                                 "--source-kind", "fixture", "--note", SOURCE["note"])
+            responses.append({"role": "operator", "method": "POST", "path": path + "/actions",
+                              "status": 200, "body": finalized})
+            assert finalized["phase"] == "verifying" and finalized["repair_round"] == round_number, finalized
+            rerun_jobs = {slot: wait(slot, finalized["slots"][slot]["candidate"]["verification"]["job_id"])
+                          for slot in ("a", "b")}
+            assert all(job["status"] == "completed" and job["result"]["status"] == "passed"
+                       and job["result"]["check_count"] == 12 for job in rerun_jobs.values()), rerun_jobs
+            measured = request("operator", path)
+            assert measured["phase"] == "decision" and measured["repair_round"] == round_number, measured
+            for slot in ("a", "b"):
+                candidate = measured["slots"][slot]["candidate"]
+                assert {key: candidate[key] for key in stable[slot]} == stable[slot], (slot, stable[slot], candidate)
+            assert all(measured["slots"][slot]["candidate"]["verification"]["status"] == "passed"
+                       for slot in ("a", "b")), measured["slots"]
+        else:
+            repaired = {slot: request(slot, path + "/submissions", mutation(slot=slot, commit_sha=shas[slot]), 202)
+                        for slot in ("a", "b")}
+            for slot in ("a", "b"):
+                job = wait(slot, repaired[slot]["job_id"])
+                assert job["result"]["check_count"] == 12, job
+                assert job["result"]["status"] == ("failed" if neither else "passed"), job
         measured = request("operator", path)
         assert measured["phase"] == "decision"
     if neither:

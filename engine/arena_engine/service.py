@@ -91,6 +91,7 @@ class Engine(Workflow):
 
     def _projection(self, db, match, actor):
         result = {k: v for k, v in match.items() if not k.startswith("_")}
+        result["provider_labels"] = match.get("provider_labels", match.get("_provider_labels", {"a": None, "b": None}))
         result = json.loads(json.dumps(result))
         revealed = match["_revealed"]
         if actor != "operator" and not revealed:
@@ -116,7 +117,13 @@ class Engine(Workflow):
             if old:
                 if old["digest"] != body_digest:
                     raise ArenaError("IDEMPOTENCY_CONFLICT", "Request ID was used with a different body")
-                return json.loads(old["response"]), old["status"]
+                response = json.loads(old["response"])
+                # Archived 1.0 Match responses retain their original phase/jobs;
+                # expose the recorded display metadata required by current 1.1.
+                if isinstance(response, dict) and "slots" in response and "provider_labels" not in response:
+                    match = self._match(db, response["match_id"])
+                    response["provider_labels"] = match.get("provider_labels", match.get("_provider_labels", {"a": None, "b": None}))
+                return response, old["status"]
             db.execute("SAVEPOINT operation")
             try:
                 response, status = operation(db)
@@ -144,7 +151,7 @@ class Engine(Workflow):
                     raise ArenaError("INVALID_STATE", "New matches require clean task-base workspaces; initialize a fresh state directory")
             match_id, at = uid("match"), now()
             match = {"match_id": match_id, "task_id": "booking-v1", "mode": "live", "phase": "building",
-                     "repair_round": 0, "max_repair_rounds": body["max_repair_rounds"],
+                     "repair_round": 0, "max_repair_rounds": body["max_repair_rounds"], "provider_labels": body["provider_labels"],
                      "spec_digest": self.runtime["spec_digest"], "suite_digest": self.suite_digest,
                      "created_at": at, "updated_at": at, "outcome": None,
                      "slots": {s: {"candidate": None, "review_complete": False} for s in ("a", "b")},
@@ -176,6 +183,7 @@ class Engine(Workflow):
             target = match["slots"][other]["candidate"] if match["_revealed"] else None
             public = json.loads((ROOT / "fixtures/booking-v1/starter/public_checks.json").read_text())
             return {"match_id": match_id, "slot": slot, "task_id": "booking-v1", "phase": match["phase"],
+                    "provider_labels": match.get("provider_labels", match.get("_provider_labels", {"a": None, "b": None})),
                     "repair_round": match["repair_round"], "task_spec": match.get("_task_spec", self.contract["booking_contract"]),
                     "task_text": match.get("_task_text", (ROOT / "fixtures/booking-v1/SPEC.md").read_text()),
                     "spec_digest": match["spec_digest"], "suite_digest": match["suite_digest"],

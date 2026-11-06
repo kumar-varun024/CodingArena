@@ -123,6 +123,29 @@ def test_instance_isolation_detects_shared_state():
     assert "second starts" in result["summary"]
 
 
+def test_instance_isolation_detects_cancellation_mutating_other_instances():
+    class CrossClearingCancel(ToyBooking):
+        instances = []
+
+        def __init__(self, capacity):
+            super().__init__(capacity)
+            self.instances.append(self)
+
+        def cancel(self, booking_id):
+            if not super().cancel(booking_id):
+                return False
+            for instance in self.instances:
+                if instance is not self:
+                    instance.bookings.clear()
+            return True
+
+    CrossClearingCancel.instances.clear()
+    result = run_instance_isolation(CrossClearingCancel)
+    assert result["passed"] is False
+    assert result["failed_step"] is None
+    assert "second survives first cancellation" in result["summary"]
+
+
 def test_candidate_exceptions_are_failures():
     class Broken:
         def __init__(self, capacity):

@@ -1,0 +1,81 @@
+{
+  "recorded_at": "2026-11-06T12:44:25.539875+00:00",
+  "status": "combined_checks_passed_native_gate_pending",
+  "source_commits": {
+    "engine": "dffecf4829f851074254d919ec4e21a577dd639c",
+    "experience": "ffd90a562a20a4bfe36c6e41495335086a3a1a62"
+  },
+  "contract_version": "1.1",
+  "contract_sha256": "c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f",
+  "archived_1_0_sha256": "3e6a106d89e05d323d5fe280117d63e937fde6e134e8dda7ae65fcc914eeec80",
+  "checks": {
+    "engine_with_docker": 108,
+    "bridge": 29,
+    "mock": 10,
+    "web": 10,
+    "runtime_installer": 9,
+    "web_build": "passed",
+    "web_node_version": "22.23.4",
+    "dashboard_api_read_checks": 5
+  },
+  "fixture_runs": {
+    "selected": {
+      "match_id": "match_5b0344048f4d4f2ca2aed7e9cd0f492a",
+      "phase": "complete",
+      "selection": "b",
+      "repair_round": 1,
+      "patch_present": true,
+      "patch_verified_on_fresh_base": true,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": false
+    },
+    "neither": {
+      "match_id": "match_17becfa2b09441ffba483d8f91e7da8d",
+      "phase": "complete",
+      "selection": "neither",
+      "repair_round": 2,
+      "patch_present": false,
+      "patch_verified_on_fresh_base": false,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": false
+    },
+    "runner_recovery": {
+      "match_id": "match_952bc8d1121949aeb88738dda05840ee",
+      "phase": "complete",
+      "selection": "b",
+      "repair_round": 1,
+      "patch_present": true,
+      "patch_verified_on_fresh_base": true,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": true
+    }
+  },
+  "browser": {
+    "live_health_1_1": "observed",
+    "authenticated_live_ui": "not_observed",
+    "fixture_neither_and_evidence": "passed",
+    "fixture_console_errors": 0
+  },
+  "native_switch": {
+    "status": "not_run",
+    "console_version": "0.40.1",
+    "official_package_sha256": "7a7cd1cc2c3a33f748252db14ebf399c8359046ed434942bcfbd641ca78ccd8e",
+    "console_launch_observed": true,
+    "docker_compose_version": "5.7.0",
+    "codex_cli_signed_in_observed": true,
+    "console_provider_readiness": null,
+    "registered_agents": null,
+    "room_ids": null,
+    "message_ids": null,
+    "blocker": "Official Console onboarding requires desktop UI; this session exposes browser control only. No genuine native room request/execution/reply has been observed."
+  }
+}

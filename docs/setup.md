@@ -1,18 +1,11 @@
-# Local setup — Sprint 3
+# Local setup
 
-Run from the CodingArena repository root. Tested on Linux with Python 3.12.14 and Docker Engine 29.9.3; Python 3.11+ is the intended baseline, with other versions not yet verified. Docker must be accessible to the user running the engine.
+These steps run the interface 1.1 engine and dashboard on one Linux host. Tested versions are Python 3.12.14, Node 22.23.4, Docker Engine 29.9.3, and Docker Compose 5.7.0. Docker must be usable by the same account that runs the engine. The engine uses the pinned runner image below.
 
-Use a fresh runtime directory for the interactive session, separate from fixture smoke states, and keep this environment variable in both server and operator terminals:
+Use a dedicated runtime directory under ignored `var/`. Keep it for match history and artifacts; do not reset or reinitialize the product repository to clear a match.
 
 ```sh
 export ARENA_STATE_DIR="$PWD/var/runtime"
-```
-
-The engine default remains repository `var/` if the variable is unset; initialization refuses any nonempty unmarked root, including one that already contains smoke subdirectories.
-
-## Install and prepare
-
-```sh
 python3 -m venv .venv
 .venv/bin/python -m pip install -r engine/requirements.txt
 docker pull python@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54
@@ -21,84 +14,81 @@ PYTHONPATH=engine .venv/bin/python -m arena_engine init
 PYTHONPATH=engine .venv/bin/python -m arena_engine doctor
 ```
 
-`contract` verifies the frozen manifest digest. `init` creates the marked state directory, task base, separate slot worktree clones, and token files with mode `0600`. It prints the operator token file path, not the token. Store runtime state under the gitignored `var/` by default; do not copy token values into prompts or logs. Repeated initialization reuses state and tokens. Initialization refuses an unmarked nonempty directory and any state with an active match.
+`contract` checks the active manifest digest. `init` provisions the marked state, task base, slot worktrees, and operator/slot token files. The operator token is at `$ARENA_STATE_DIR/auth/operator.token`; read it locally to enter it in the dashboard. `init` prints token paths, not values. Initialization reuses an existing marked state and refuses an unrelated nonempty directory or initialization while a match is active. It does not reset existing workspaces. Keep token values private; the dashboard holds its operator token in memory only.
 
-`doctor` reports Docker/image readiness and whether state is initialized. It exits 0 when those preflight checks pass and never prints credentials. Start the API and verification worker with:
+## Start the engine and dashboard
+
+In a terminal with `ARENA_STATE_DIR` set, start the engine:
 
 ```sh
 PYTHONPATH=engine .venv/bin/python -m arena_engine serve
-curl http://127.0.0.1:8765/api/v1/health
 ```
 
-The server defaults to `127.0.0.1:8765`; `serve --host HOST --port PORT` changes the bind address. Only one engine server can own a state directory at a time.
-
-## Configuration and runtime state
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `ARENA_STATE_DIR` | repository `var/` | Marked runtime root, tokens, workspaces, SQLite, snapshots, artifacts, and operator retry journal |
-| `ARENA_RUNNER_IMAGE` | pinned image digest above | Prepared Python runner image; mutable tags are rejected |
-| `ARENA_API_URL` | `http://127.0.0.1:8765` | Operator CLI server URL |
-
-The declared build budget is advisory; the engine does not measure provider cost or enforce generation quotas. Use a separate state directory for a later match after either slot has changed its worktree. The engine never silently resets a slot checkout. Keep existing state directories when their match history and snapshots are needed.
-
-## Operator workflow
-
-Create a match, read assignments with the respective slot tokens, and have both slots commit and submit their allowed source file. The operator waits for both verification jobs to become terminal before reveal. Once revealed, slots can inspect exact opponent snapshots and submit bounded scenario challenges during review. Each challenge is checked against the private reference and then run against its exact frozen target twice. Invalid or not-reproduced challenges are rejected automatically. Inconclusive challenges remain pending until the operator rejects them with a reason or cancels the match; they can be retried.
-
-Both slots must complete review against the exact opponent candidate. The operator may accept only a reproduced challenge. Acceptance updates the common regression suite and invalidates both candidates' earlier evidence. After every challenge is resolved and both reviews are complete, the operator may start a repair round. Each slot submits once; the queued repair verification waits for both submissions. The match returns to decision when both verifications finish. The repair cap is chosen at creation and cannot exceed two rounds. If verification infrastructure fails, use `finalize` from decision to rerun the unchanged candidate snapshots without spending a repair round.
-
-Example operator commands:
+In a second terminal from the repository root, install and start the web app with Node 22.23.4:
 
 ```sh
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator create \
-  --label-a "Agent A" --label-b "Agent B" --budget-minutes 10 --max-repair-rounds 2
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator match --match MATCH_ID
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator job --id JOB_ID
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action reveal --reason "Both initial jobs are terminal"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator decision \
-  --match MATCH_ID --challenge CHALLENGE_ID --disposition accepted \
-  --reason "The reproduced scenario violates the cited requirement"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action start_repair --reason "Review is resolved"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action finalize --reason "Rerun current candidates"
+npm --prefix web ci
+npm --prefix web run dev
 ```
 
-Selection from decision requires the latest eligible candidate and its exact current evidence key. Save that key object from the match response as JSON, then pass its file to the CLI:
+Open `http://127.0.0.1:5173`. The Vite proxy sends `/api/v1` to `http://127.0.0.1:8765`. Enter the operator token from the initialized state when prompted. Do not put credentials into `.env`, a `VITE_` variable, prompts, or browser storage. For a non-default engine host, set only the non-secret `VITE_ARENA_API_BASE` URL in `web/.env.local` and restart Vite; the engine must permit the UI origin and return `X-Arena-Mode`.
+
+The default proxy needs no CORS configuration. For direct cross-origin requests, set `ARENA_UI_ORIGIN` to the exact UI origin (for example `http://127.0.0.1:5173`) before starting the engine; it exposes the response-mode and download headers for that origin. The dashboard connects to the engine and creates or opens a match. For operator CLI workflows and phase rules, see [Engine scope](engine.md). For a synthetic UI-only experience, see [the fixture guide](../web/mock/README.md); fixtures do not create native agents or usable patches.
+
+## Prepare native Switch slots
+
+Only install runtime files into the existing slot roots created by engine initialization. First review the dry run, then install:
 
 ```sh
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
-  --match MATCH_ID --selection a --candidate CANDIDATE_ID \
-  --evidence-key var/evidence-key.json --reason "Current evidence supports selection"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
-  --match MATCH_ID --selection neither --reason "Neither candidate is eligible"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator export --match MATCH_ID
+python3 switch/install_runtime.py --state-dir "$ARENA_STATE_DIR" --api-url http://127.0.0.1:8765 --check
+python3 switch/install_runtime.py --state-dir "$ARENA_STATE_DIR" --api-url http://127.0.0.1:8765
 ```
 
-`export` downloads `evidence.json`, `summary.md`, and `candidate.patch` when a candidate was selected, by default under `<state_dir>/exports/<match-id>/`. Use `--output DIR` for another destination. It refuses to overwrite different files. The common evidence pack excludes private practice jobs/events. No patch is exported for neither, and the service never applies a patch automatically.
+The installer checks both slot roots before writing. It does not provision or reset engine state, read token contents, start providers, or register agents. Set each native agent's Directory to its printed slot root, and follow [Switch setup](switch.md) and the [demo guide](demo.md). The integration host's UI must complete the human-led Console, provider, agent, and room setup; none of those native steps are proven by local fixtures or CLI checks.
 
-Mutations accept `--request-id UUID`, `--room-id`, `--message-id`, and `--note`. Before sending, the CLI journals the exact canonical request body and endpoint under `operator-requests/<request_id>.json` with mode `0600`; the journal contains no token. A timeout or connection failure leaves the result unknown. Retry with the same ID and body:
+## Verification evidence
+
+The following checks have passed on the merged integration tree:
+
+| Check | Evidence |
+| --- | --- |
+| Engine | 108 tests with Docker enabled; selected patch applied to a fresh task base and passed 12 checks; separate neither result exported no patch |
+| Switch bridge | 29 tests |
+| HTTP fixture service | 10 tests |
+| Dashboard | 10 tests and production build on Node 22.23.4 |
+| Native runtime installer | 9 tests |
+| Live dashboard client | Five read-only checks against the actual `ArenaApi`: health/version/mode, match labels, events, unknown-job 404, invalid-token 401 |
+| Browser fixture | Connected, selected neither, inspected labelled synthetic evidence; no console errors |
+| Runner recovery fixture | Injected Docker-start failures yielded unknown eligibility; finalize kept the same snapshots and repair round, then real Docker reruns passed |
+
+Run focused local suites with:
 
 ```sh
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator retry --request-id REQUEST_UUID
+ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests
+python3 -m unittest discover -s switch_bridge/tests -q
+python3 -m unittest discover -s web/mock -p 'test_*.py' -q
+npm --prefix web test
+npm --prefix web run build
+python3 -m unittest discover -s switch/tests -q
 ```
 
-A received error is conclusive for that operation; after fixing its cause use a new request ID. A transport timeout always retries the original request. Source room/message IDs are context, not verified Switch authentication. CLI operator actions default to `operator_recorded`; use `--source-kind fixture` for scripted fixture operations.
-
-## Checks and fixture smoke
-
-Run the deterministic engine fixture workflows against a real local HTTP server and Docker runner:
+Run the combined client/engine fixture flows without native agents:
 
 ```sh
-.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint3-api-snapshot.json
-.venv/bin/python scripts/smoke_engine.py --full-match --snapshot contracts/sprint3-api-snapshot.json
-.venv/bin/python scripts/smoke_engine.py --neither
+.venv/bin/python scripts/smoke_engine.py --full-match --bridge-cli
+.venv/bin/python scripts/smoke_engine.py --neither --bridge-cli
+.venv/bin/python scripts/smoke_engine.py --runner-recovery --bridge-cli
 ```
 
-Each invocation creates an isolated `var/smoke-*` state and does not reset existing state. The full-match fixture covers challenge reproduction and rejection, review, accepted regressions, repair, exact evidence-key selection, and export. The neither fixture keeps both candidates broken through the repair cap and verifies `neither` selection. The snapshot contains non-secret HTTP response samples for API/client comparison. These workflows use labeled fixtures; they are not a live Switch agent match and do not establish B-client integration. Do not report them as native-agent evidence or as final product completion.
+Each uses new disposable state. Recovery injects a labelled Docker-start transport failure only into its own process environment, then verifies unchanged candidates against real Docker after the fault is removed. It does not stop the shared Docker daemon or manufacture passing job results.
 
-The v1 interface remains frozen in `contracts/arena-v1.json`, with its digest recorded in the contract loader. Sprint 3 did not change the manifest or its hash.
+To repeat the read-only client check against a prepared match, use the operator state directory and match ID. The script reads the operator token directly into memory and does not print it or perform mutations:
 
-Run all checks, including the actual Docker tests, with `ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests`. Tests without this variable explicitly skip Docker tests; a skip is not execution evidence.
+```sh
+node --experimental-transform-types \
+  scripts/check_dashboard_client.mjs \
+  --api-url http://127.0.0.1:8765/api/v1 \
+  --state-dir "$ARENA_STATE_DIR" --match MATCH_ID
+```
+
+Use the Node 22.23.4 baseline for this helper; its TypeScript-transform flag is experimental and confined to validation. The check does not interact with a browser or native agents. Browser health at interface 1.1 and a labelled fixture UI flow have been observed; authenticated live UI and native Switch agents/room replies have not. See the [Sprint gates](integration.md); do not report the native gate as complete until that evidence exists.

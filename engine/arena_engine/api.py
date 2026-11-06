@@ -1,12 +1,14 @@
 """The implemented v1 first-match API, shared by dashboard and Switch client."""
 
 from contextlib import asynccontextmanager
+import json
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException
+from starlette.middleware.cors import CORSMiddleware
 
 from .contract import load_contract
 from .errors import ArenaError
@@ -36,6 +38,44 @@ def create_app(settings=None, runner=None, start_worker=True) -> FastAPI:
 
     app = FastAPI(title="Coding Arena", version=contract["contract_version"], lifespan=lifespan)
     app.state.engine = engine
+
+    if settings.ui_origin:
+        app.add_middleware(CORSMiddleware, allow_origins=[settings.ui_origin],
+                           allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"],
+                           expose_headers=["X-Arena-Mode", "Content-Disposition"])
+
+    @app.middleware("http")
+    async def response_mode(request: Request, call_next):
+        class DuplicateField(ValueError):
+            pass
+
+        def unique_object(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise DuplicateField()
+                result[key] = value
+            return result
+
+        try:
+            if request.method == "POST" and "application/json" in request.headers.get("content-type", ""):
+                try:
+                    json.loads(await request.body(), object_pairs_hook=unique_object)
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    pass  # The framework returns the normal malformed-input envelope.
+            response = await call_next(request)
+        except DuplicateField:
+            response = JSONResponse(status_code=422, content={"error": {"code": "INVALID_INPUT",
+                "message": "Duplicate JSON object fields are not allowed", "details": {}}})
+        except Exception:
+            response = JSONResponse(status_code=503, content={"error": {"code": "INVALID_STATE",
+                "message": "Engine operation failed; retry the same request ID after recovery", "details": {}}})
+        if settings.ui_origin and request.headers.get("origin") == settings.ui_origin:
+            response.headers["Access-Control-Allow-Origin"] = settings.ui_origin
+            response.headers["Access-Control-Expose-Headers"] = "X-Arena-Mode, Content-Disposition"
+        if request.url.path == "/api/v1" or request.url.path.startswith("/api/v1/"):
+            response.headers["X-Arena-Mode"] = "live"
+        return response
 
     @app.exception_handler(ArenaError)
     async def arena_error(_request: Request, exc: ArenaError):
@@ -69,7 +109,7 @@ def create_app(settings=None, runner=None, start_worker=True) -> FastAPI:
 
     @app.get("/api/v1/health")
     def health():
-        return {"api_version": "1.0", "mode": "live", "runner_available": bool(
+        return {"api_version": contract["contract_version"], "mode": "live", "runner_available": bool(
             engine and not engine.worker_failed and engine.runner.available()), "status": "ok"}
 
     @app.post("/api/v1/matches")

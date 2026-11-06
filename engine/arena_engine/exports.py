@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+from .contract import CONTRACT_VERSION
 
 
 def _selected_candidate(match: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -129,7 +130,7 @@ def build_export(match: dict, events: list[dict], source: bytes | None,
             raise ValueError("selected outcome must have an allocated patch artifact ID")
     fixture_source = _fixture_source(events)
     evidence = {
-        "version": "1.0",
+        "version": CONTRACT_VERSION,
         "match": match,
         "events": events,
         "coverage": {

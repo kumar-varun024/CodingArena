@@ -9,7 +9,7 @@ The two development roles build one product. Runtime contestants are separate na
 | 3 — Full match | Reproduction, adjudication, shared suite, repair, recovery, guarded selection and exports | Review/repair/decision UI, bridge commands, errors and fixture scenarios | Automated fixture match passes; invalid claims, stale evidence, runner errors and neither outcomes tested |
 | 4 — Integration and demo | Combine ready branches, run shared checks, verify exported patch on fresh task base | Complete native Switch setup, demo and experience docs | Genuine human + two-agent match recorded; patch applies and passes recorded suite; limitations documented |
 
-Current sprint: **3 — Full match**. A's engine workflow is implemented and verified with labelled fixtures. B's real-client checkpoint and shared contract-hash confirmation remain pending. Sprint 4 combines both ready feature branches only when the user initiates that integration phase.
+Current sprint: **4 — Integration and demo**. The user initiated integration. Both feature branches are combined in a separate worktree on `feat/arena-integration`; engine/client fixture checks pass. The genuine native Switch room workflow and authenticated live-dashboard interaction remain unverified, so Sprint 4 is not complete and main has not been merged.
 
 ## Sprint 1 scope
 
@@ -47,6 +47,17 @@ Current sprint: **3 — Full match**. A's engine workflow is implemented and ver
 - Real `--neither` smoke kept both candidates broken through two repair rounds, enforced the cap, and exported evidence/summary with no patch. No mandatory winner was introduced.
 - [Sprint 3 API samples](../contracts/sprint3-api-snapshot.json) record labelled fixture interactions against the live engine. Shared exports exclude private practice jobs/events; tokens, private reference source and held-out source are not included.
 - Canonical contract and dependencies are unchanged. No B-owned files or live Switch agents were used. The engine side is ready for the combined integration checkpoint; the product remains incomplete until both branches and the genuine native-agent workflow are verified in Sprint 4.
+
+## Sprint 4 checkpoint (2026-11-06)
+
+- Created a separate integration worktree and `feat/arena-integration` from `origin/main`. Merged engine `dffecf4829f851074254d919ec4e21a577dd639c` and experience `ffd90a562a20a4bfe36c6e41495335086a3a1a62`, including B's runtime installer. The original engine worktree and its untracked handoff were preserved.
+- Resolved the real protocol mismatch in A-owned files: the experience branch's supplied 1.1 manifest is now published unchanged as `contracts/arena-v1.1.json` (canonical `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`). Original frozen 1.0 remains unchanged. The engine provides mode headers on successes/errors/artifacts, persisted nullable provider labels, optional exact-origin CORS, and bidirectional cancellation isolation coverage. No B client validation was weakened.
+- Checks passed: **108** engine tests with Docker enabled; **29** bridge tests; **10** mock tests; **10** frontend tests plus typecheck/build on exact Node **22.23.4**; **9** runtime-installer tests. The upstream test-client deprecation warning remains non-failing.
+- The real B bridge completed selected and neither fixture workflows against the real engine/Docker runner. Accepted regressions ran on both candidates. The selected patch applied to a fresh disposable task base and passed all 12 recorded checks. A separate scoped Docker-start fault injection produced error/unknown eligibility, then recovered through `finalize` with identical candidate IDs/commits/trees and the same repair round; actual Docker reruns passed before selection/export.
+- The actual dashboard API library passed five read-only checks against the live service. Browser inspection confirmed live health/version and completed the labelled fixture UI neither/evidence flow; no console errors were observed. This does not establish authenticated live UI use or a native match.
+- [Integration API examples](../contracts/integration-v1.1-api-snapshot.json) and [checkpoint record](../contracts/integration-checkpoint.json) distinguish fixture execution from unobserved native work. Runtime tokens/vendor packages/logs remain under ignored `var/`.
+- Prepared stable demo roots, copied B's client/prompts using the actual installer, and created a live building match. Official Console **0.40.1** was downloaded, checked against release SHA-256, extracted locally and launched. Docker Compose **5.7.0** works and the Codex CLI reports signed in. Those facts do not prove Console provider readiness or native registration.
+- **Open gate:** no native agents/rooms/real agent replies or authenticated live-dashboard decisions have been observed. Native desktop control is disabled in this session; official Console onboarding uses its Electron UI, with no supported browser-only equivalent found. Complete server creation, provider verification and agent registration in the running desktop Console using each slot's generated `.arena/console-instructions.md`, then observe the genuine room round trips and match. Main is not merged, feature PRs remain open, and no final demo recording is claimed.
 
 ## Integration sequence (Sprint 4 only)
 

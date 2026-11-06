@@ -70,7 +70,7 @@ def test_neither_exports_no_patch_or_source_and_reports_blockers():
     exported = build_export(match, events, b"secret candidate", b"hidden base")
     assert set(exported) == {"evidence.json", "summary.md"}
     evidence = json.loads(exported["evidence.json"])
-    assert evidence["version"] == "1.0"
+    assert evidence["version"] == "1.1"
     assert evidence["match"] == match
     assert evidence["events"] == events
     assert "secret candidate" not in exported["evidence.json"].decode()

@@ -1,98 +1,47 @@
-# Engine — Sprint 3 first-match workflow
+# Engine scope and interface
 
-The engine provisions stable slot workspaces, persists matches and jobs in SQLite, freezes candidate source, and runs practice, official verification, and challenge reproduction in restricted Docker containers. Sprint 3 adds review, operator adjudication, repair rounds, fresh final verification, selection, and downloadable evidence. This is fixture-backed engine functionality; it is not evidence of a live Switch match or B-client integration, and the product is not complete. Sprint 4 requires the user to initiate integration of both ready branches.
+The engine owns the trusted state of a match: task assignments, isolated slot workspaces, candidate snapshots, verification jobs, challenge adjudication, phase transitions, eligibility, and evidence/patch exports. The web dashboard and Switch client are consumers of the same HTTP API. The engine never imports or executes contestant code in its service process; a trusted driver loads candidate modules only inside the restricted Docker runner.
 
-## Run locally
+## Interface
 
-From the repository root:
+The active API is **1.1**, served at `/api/v1`. Its canonical manifest is [contracts/arena-v1.1.json](../contracts/arena-v1.1.json), SHA-256 `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`. [The original v1.0 manifest](../contracts/arena-v1.json) is retained unchanged as an archive. Both clients require the 1.1 version and response-mode header; do not change or relax either client to mask a server mismatch.
 
-```sh
-export ARENA_STATE_DIR="$PWD/var/runtime"
-PYTHONPATH=engine .venv/bin/python -m arena_engine init
-PYTHONPATH=engine .venv/bin/python -m arena_engine doctor
-PYTHONPATH=engine .venv/bin/python -m arena_engine serve
-```
+Health is public. Match, assignment, event, job, and artifact reads use an operator or slot token. Writes carry a UUID request ID and source context. The engine returns `X-Arena-Mode: live` on API responses; the fixture service labels its responses `fixture`. The dashboard rejects missing, invalid, or contradictory mode metadata. See the manifest for exact request fields, role visibility, response shapes, and error semantics.
 
-`init` prints non-secret runtime metadata and the operator token file path. Read that file locally when needed; never put token values in logs, prompts, request journals, or client bundles. Re-running `init` reuses existing tokens and state. It refuses an unrelated nonempty directory and refuses to initialize while a match is active. It never resets an existing marked tree.
+## Match lifecycle
 
-`doctor` checks Docker, the pinned image, and initialized state without printing credentials. It exits 0 when these preflight checks pass and 1 otherwise; the running service's health endpoint also reflects worker startup failures. `serve` binds to `127.0.0.1:8765` by default; use `serve --host HOST --port PORT` to override. One server process may hold a state directory at a time.
+Two slots work independently from engine-provisioned task checkouts. After submissions, the operator reveals frozen candidate snapshots. Each slot reviews the other snapshot and can submit bounded JSON challenges tied to requirements. The runner checks the reference first, then runs the exact frozen target twice. Only a reproduced challenge may be accepted. Accepted challenges become shared regressions and invalidate both candidates' earlier verification evidence.
 
-| Variable | Default | Use |
-| --- | --- | --- |
-| `ARENA_STATE_DIR` | repository `var/` | Runtime state root |
-| `ARENA_RUNNER_IMAGE` | `python@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54` | Docker runner image; must be pinned by digest |
-| `ARENA_API_URL` | `http://127.0.0.1:8765` | Base URL for `operator` CLI commands |
+Once reviews and challenge decisions are resolved, the operator may request up to two repair rounds or finalize directly. A full verification includes the task baseline and all accepted regressions. Candidate selection requires current eligibility and the exact current evidence key. **Neither** is a valid selection from the decision phase and produces an evidence pack without a patch. The engine does not merge or apply a patch automatically.
 
-## Match, review, and repair
+For setup, CLI examples, and focused checks, see [Local setup](setup.md). The web guide covers dashboard use; the [Switch guide](switch.md) describes native agent setup and its separate evidence gate.
 
-The operator creates a match and receives two isolated slot workspaces. Each slot commits its allowed source file and submits a commit SHA. The engine freezes that source and runs public practice or the full baseline verification. After both initial verification jobs are terminal, the operator reveals the candidates. Slots can then inspect the exact frozen opponent snapshot and submit challenges against that candidate.
+## Human operator CLI
 
-A challenge carries a bounded JSON scenario and requirement IDs. The trusted runner executes that exact scenario against the private reference first. The reference must pass before the target is run, and the target must fail in two fresh verification environments for the challenge to be `reproduced`. A reference mismatch or invalid scenario is `invalid` and auto-rejected; a target pass is `not_reproduced` and auto-rejected. Runner failure, cancellation, malformed results, or inconsistent target attempts are `inconclusive`: the disposition stays pending until the operator explicitly rejects it with a reason or cancels the match. An inconclusive attempt may be retried. Exact conclusive duplicates for the same frozen target are reused.
-
-Both slots must explicitly complete review against the exact opponent candidate before review can advance. The operator may accept only a reproduced challenge and must give a reason. Acceptance adds that scenario to the common regression suite and invalidates both candidates' prior verification evidence. Rejected challenges do not change the suite.
-
-The operator can start a repair round only after every challenge has a resolved disposition and both reviews are complete. Each slot may submit once in the round; queued repair verification waits until both submissions arrive. The round cap is set at match creation and is at most two. Once both new candidates are verified, the match returns to decision. If verification infrastructure fails, the operator can finalize again against the same frozen candidate snapshots without spending a repair round.
-
-When no repair is needed, `finalize` also advances resolved review directly to verification without consuming a repair round. New matches pin their specification text, baseline cases and private reference. A legacy Sprint 2 match without a frozen reference must be cancelled and recreated before submitting challenges; changed legacy baselines are refused rather than silently substituted.
-
-From decision, the operator can finalize for a fresh full-suite run or select a candidate or `neither`. Selection of a candidate requires the current eligible candidate revision and its exact latest evidence key (candidate, spec, suite, and runner digests). This prevents stale or mismatched verification from being selected. `neither` is available from decision without a candidate or evidence key.
-
-## Operator CLI and retries
-
-The CLI reads the operator token from the state directory and sends requests to `ARENA_API_URL`:
+Use the same `ARENA_STATE_DIR` as the server and run from the repository root. Omitted provider labels remain null/Unknown; record actual configuration only when known.
 
 ```sh
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator create \
-  --label-a "Agent A" --label-b "Agent B" --budget-minutes 10 --max-repair-rounds 2
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator create
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator match --match MATCH_ID
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator job --id JOB_ID
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action reveal --reason "Both initial jobs are terminal"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator decision \
-  --match MATCH_ID --challenge CHALLENGE_ID --disposition accepted \
-  --reason "The reproduced scenario violates the cited requirement"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action start_repair --reason "Review is resolved"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator action \
-  --match MATCH_ID --action finalize --reason "Run the current candidates against the full suite"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
-  --match MATCH_ID --selection a --candidate CANDIDATE_ID \
-  --evidence-key var/evidence-key.json --reason "Current evidence supports selection"
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator select \
-  --match MATCH_ID --selection neither --reason "Neither candidate is eligible"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator action --match MATCH_ID --action reveal --reason "Both initial jobs are terminal"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator decision --match MATCH_ID --challenge CHALLENGE_ID --disposition accepted --reason "The reproduced scenario violates the cited requirement"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator action --match MATCH_ID --action start_repair --reason "Both reviews and all challenge decisions are resolved"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator action --match MATCH_ID --action finalize --reason "Run the unchanged current candidates against the complete suite"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator select --match MATCH_ID --selection a --candidate CANDIDATE_ID --evidence-key var/evidence-key.json --reason "Current evidence supports this choice"
+PYTHONPATH=engine .venv/bin/python -m arena_engine operator select --match MATCH_ID --selection neither --reason "Neither candidate is acceptable"
 PYTHONPATH=engine .venv/bin/python -m arena_engine operator export --match MATCH_ID
 ```
 
-For candidate selection, `--evidence-key` names a JSON file containing the exact `EvidenceKey` returned with the candidate's latest verification. After completion, `export` downloads `evidence.json`, `summary.md`, and, when a candidate was selected, `candidate.patch` under the state directory's `exports/<match-id>/` by default. Supply `--output DIR` to choose another destination; existing different files are not overwritten.
+The selection examples are alternatives. Save the four-field `verification.evidence_key` from the latest match response as the JSON file supplied to `--evidence-key`. Export downloads evidence/summary and an eligible selected patch; neither exports no patch. To cancel a nonterminal match use `operator action --match MATCH_ID --action cancel --reason "..."`.
 
-Every mutation takes a caller-visible UUID `request_id`. The CLI writes the exact canonical body and endpoint to `operator-requests/<request_id>.json` with mode `0600`; the journal contains no token. If transport fails, the outcome is unknown. Retry the saved operation with the same identifier:
+Mutations persist their UUID and canonical non-secret body before dispatch. After an ambiguous transport failure use `operator retry --request-id UUID`; never replace the ID/body merely because the response was lost. After a conclusive rejected operation, fix its cause and start a new operation with a new ID. Source flags accept actual room/message IDs as contextual provenance, not verified Switch authentication. Use `--source-kind fixture` for scripted fixture actions. A native agent's statement that a human approved has no operator authority.
 
-```sh
-PYTHONPATH=engine .venv/bin/python -m arena_engine operator retry --request-id REQUEST_UUID
-```
+## Runner and persisted state
 
-Successful writes and deliberate operation errors are persisted under that ID. A received error is conclusive for that operation; after correcting its cause, initiate a new operation with a new ID. Ambiguous transport failures always retry the original ID/body. Provider labels are operator-supplied context, recorded in the common `match.created` event.
+The runner uses the pinned Python image digest, disposable containers, no network, read-only source/test mounts, a read-only root filesystem, a non-root user, dropped capabilities, bounded CPU/memory/processes, and a timeout. No candidate dependencies are installed. Practice jobs run public checks and accepted regressions only; they cannot establish eligibility. Full verification evidence is tied to candidate, runner, spec, and suite digests.
 
-## HTTP and trusted execution
+SQLite stores matches, jobs, events, artifacts, and idempotency records under the marked runtime directory. Interrupted running jobs become errors on restart; require an explicit rerun when appropriate. Runtime tokens, snapshots, logs, and exports belong under gitignored `var/`. Keep the existing state directory when its history or workspaces matter; initialization is not a reset operation.
 
-The API is under `/api/v1`. `GET /health` is public. Match, assignment, submission, practice, events, jobs, artifacts, challenge, review, decision, selection, and action endpoints use `Authorization: Bearer <token>`. Writes require a UUID `request_id` and a `source` object. The operator controls phases and decisions; a slot can submit or practice only for itself. Challenge schemas are validated before job creation (HTTP 422 for malformed requests). APIs expose concise results and logs, not private reference source or held-out test source.
+## Verification boundary
 
-Practice runs the public cases plus all accepted regressions. Initial and final candidate verification run the configured full baseline and accepted challenge regressions, including the separate BOOK-07 instance-isolation check. Passing verification records an evidence key tied to the frozen candidate, task specification, suite, and runner. Only evidence matching the current values can make a candidate eligible for selection. Practice results never establish eligibility; private practice jobs/events are excluded from the common exported evidence.
-
-The Docker runner uses the pinned image by image ID, fresh disposable containers, `--network none`, a read-only root filesystem, read-only candidate and trusted-driver mounts, non-root UID/GID 65534, dropped capabilities, `no-new-privileges`, one CPU, 128 MiB memory, 32 process limit, and a 16 MiB no-exec temporary filesystem. Each case has a bounded wall-clock limit and captured output is capped. No candidate dependencies are installed. Candidate modules are imported only by the trusted driver inside these containers, never by the service process.
-
-SQLite persists matches, jobs, events, artifacts, and idempotency records. At startup, interrupted jobs are marked as errors; queued work resumes when runner startup cleanup succeeds. Interrupted challenge reproduction becomes inconclusive and requires operator resolution. Failed cleanup blocks the worker and records queued work as errors. The engine removes abandoned labeled runner containers for its state root. The state lock prevents a second server from using the same directory.
-
-## Fixture evidence and interface
-
-The deterministic HTTP plus Docker fixture smoke can exercise the short reveal/cancel path or the full challenge, repair, selection, and export flow:
-
-```sh
-.venv/bin/python scripts/smoke_engine.py --snapshot contracts/sprint3-api-snapshot.json
-.venv/bin/python scripts/smoke_engine.py --full-match --snapshot contracts/sprint3-api-snapshot.json
-.venv/bin/python scripts/smoke_engine.py --neither
-```
-
-The script provisions a fresh `var/smoke-*` state and uses labeled fixtures. `--full-match` exercises reference-pass/target-fail-twice reproduction, invalid challenge rejection, acceptance and shared-suite invalidation, repair verification, exact-key selection, and artifact export. `--neither` keeps both fixtures broken through the repair cap and selects neither. These runs do not exercise a native Switch agent or B's client, and fixture results are not live match evidence.
-
-The normative v1 manifest remains [arena-v1.json](../contracts/arena-v1.json), SHA-256 `3e6a106d89e05d323d5fe280117d63e937fde6e134e8dda7ae65fcc914eeec80`. Sprint 3 does not change that contract.
+The integration branch has passed 108 engine tests with Docker enabled. The actual bridge completed selected and neither fixture matches through HTTP; a selected patch applied and passed 12 checks on a fresh task base. An explicitly injected runner-failure fixture also recovered through finalization without changing candidate snapshots or consuming a repair round. The dashboard's actual API client passed read-only live checks. These results do not establish native Switch agent execution or room replies; that gate remains open. See [Sprint gates](integration.md).
