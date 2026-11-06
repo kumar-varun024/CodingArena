@@ -32,8 +32,8 @@ def main() -> int:
         read_runtime(settings)
         return operator_cli.run(args, settings)
     if args.command == "contract":
-        load_contract()
-        print(json.dumps({"contract_version": "1.0", "canonical_sha256": CONTRACT_SHA256}))
+        contract = load_contract()
+        print(json.dumps({"contract_version": contract["contract_version"], "canonical_sha256": CONTRACT_SHA256}))
         return 0
     if args.command == "doctor":
         status = runtime_status()

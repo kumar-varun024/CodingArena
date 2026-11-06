@@ -95,4 +95,8 @@ The deterministic HTTP plus Docker fixture smoke can exercise the short reveal/c
 
 The script provisions a fresh `var/smoke-*` state and uses labeled fixtures. `--full-match` exercises reference-pass/target-fail-twice reproduction, invalid challenge rejection, acceptance and shared-suite invalidation, repair verification, exact-key selection, and artifact export. `--neither` keeps both fixtures broken through the repair cap and selects neither. These runs do not exercise a native Switch agent or B's client, and fixture results are not live match evidence.
 
-The normative v1 manifest remains [arena-v1.json](../contracts/arena-v1.json), SHA-256 `3e6a106d89e05d323d5fe280117d63e937fde6e134e8dda7ae65fcc914eeec80`. Sprint 3 does not change that contract.
+The active manifest is [arena-v1.1.json](../contracts/arena-v1.1.json), canonical SHA-256 `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`, identical to B's embedded 1.1 specification. The historical [arena-v1.json](../contracts/arena-v1.json) remains unchanged. Health advertises 1.1 on the existing `/api/v1` base.
+
+Every API response carries `X-Arena-Mode: live`, including framework/auth errors and text/JSON artifacts. Only Health and Match bodies have a top-level mode. Optional `ARENA_UI_ORIGIN` enables exact-origin CORS and exposes mode/download headers; the default Vite proxy preserves them without CORS configuration. Match and Assignment return the persisted operator labels unchanged, including nulls, before reveal and across restart. Older saved Match retry responses gain the same labels without changing retry identity. Existing 1.0 task workspaces remain readable; new state records 1.1.
+
+Challenge requests reject duplicate requirement IDs. The single-instance scenario DSL is unchanged; every official full verification still includes the trusted BOOK-07 multi-instance check, including repair and recovery reruns.

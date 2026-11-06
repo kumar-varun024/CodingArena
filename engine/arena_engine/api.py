@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException
 
@@ -60,6 +61,25 @@ def create_app(settings=None, runner=None, start_worker=True) -> FastAPI:
         return JSONResponse(status_code=503, content={"error": {"code": "INVALID_STATE",
             "message": "Engine operation failed; retry the same request ID after recovery", "details": {}}})
 
+    @app.middleware("http")
+    async def handled_failures(request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as exc:
+            return await internal_error(request, exc)
+
+    if settings.ui_origin:
+        app.add_middleware(CORSMiddleware, allow_origins=[settings.ui_origin],
+                           allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"],
+                           expose_headers=["X-Arena-Mode", "Content-Disposition"])
+
+    @app.middleware("http")
+    async def response_mode(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path == "/api/v1" or request.url.path.startswith("/api/v1/"):
+            response.headers["X-Arena-Mode"] = "live"
+        return response
+
     def actor(authorization: Annotated[str | None, Header()] = None):
         if engine is None:
             raise ArenaError("INVALID_STATE", "Initialize the engine state directory before using match endpoints", 503)
@@ -69,7 +89,7 @@ def create_app(settings=None, runner=None, start_worker=True) -> FastAPI:
 
     @app.get("/api/v1/health")
     def health():
-        return {"api_version": "1.0", "mode": "live", "runner_available": bool(
+        return {"api_version": contract["contract_version"], "mode": "live", "runner_available": bool(
             engine and not engine.worker_failed and engine.runner.available()), "status": "ok"}
 
     @app.post("/api/v1/matches")

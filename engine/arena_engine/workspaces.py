@@ -85,7 +85,8 @@ def _validate_initialized(state: Path) -> dict:
         raise WorkspaceError("marked state directory is incomplete or corrupted")
     try:
         meta = json.loads((state / "runtime.json").read_text(encoding="utf-8"))
-        if meta.get("task_id") != TASK_ID or meta.get("contract_version") != "1.0":
+        # 1.1 changes transport/metadata, not the task or workspace layout.
+        if meta.get("task_id") != TASK_ID or meta.get("contract_version") not in ("1.0", "1.1"):
             raise ValueError
         contract = load_contract()
         expected_digest = hashlib.sha256(canonical_bytes(contract["booking_contract"])).hexdigest()
@@ -170,7 +171,7 @@ def initialize(settings: Settings) -> dict:
         meta = {
             "base_commit": base_commit,
             "task_id": TASK_ID,
-            "contract_version": "1.0",
+            "contract_version": contract["contract_version"],
             "spec_digest": hashlib.sha256(canonical_bytes(contract["booking_contract"])).hexdigest(),
             "workers": {s: str(state / "workers" / s) for s in ("a", "b")},
         }

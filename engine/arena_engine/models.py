@@ -25,8 +25,15 @@ class Mutation(Model):
 
 
 class Labels(Model):
-    a: str
-    b: str
+    a: Annotated[str, Field(min_length=1)] | None
+    b: Annotated[str, Field(min_length=1)] | None
+
+    @field_validator("a", "b")
+    @classmethod
+    def nonblank_label(cls, value):
+        if value is not None and not value.strip():
+            raise ValueError("provider label must be non-empty or null")
+        return value
 
 
 class CreateMatch(Mutation):
@@ -51,6 +58,20 @@ class ChallengeRequest(Mutation):
     title: Annotated[str, Field(min_length=1, max_length=240)]
     requirement_ids: Annotated[list[Literal["BOOK-01", "BOOK-02", "BOOK-03", "BOOK-04", "BOOK-05", "BOOK-06", "BOOK-07"]], Field(min_length=1, max_length=7)]
     scenario: dict
+
+    @field_validator("title")
+    @classmethod
+    def nonblank_title(cls, value):
+        if not value.strip():
+            raise ValueError("challenge title must be non-empty")
+        return value
+
+    @field_validator("requirement_ids")
+    @classmethod
+    def unique_requirements(cls, value):
+        if len(value) != len(set(value)):
+            raise ValueError("requirement IDs must be unique")
+        return value
 
     @field_validator("scenario")
     @classmethod

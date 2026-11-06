@@ -39,6 +39,7 @@ The server defaults to `127.0.0.1:8765`; `serve --host HOST --port PORT` changes
 | `ARENA_STATE_DIR` | repository `var/` | Marked runtime root, tokens, workspaces, SQLite, snapshots, artifacts, and operator retry journal |
 | `ARENA_RUNNER_IMAGE` | pinned image digest above | Prepared Python runner image; mutable tags are rejected |
 | `ARENA_API_URL` | `http://127.0.0.1:8765` | Operator CLI server URL |
+| `ARENA_UI_ORIGIN` | unset | Optional exact UI origin for direct browser access; exposes mode and download headers. B's default Vite proxy needs no CORS setting. |
 
 The declared build budget is advisory; the engine does not measure provider cost or enforce generation quotas. Use a separate state directory for a later match after either slot has changed its worktree. The engine never silently resets a slot checkout. Keep existing state directories when their match history and snapshots are needed.
 
@@ -99,6 +100,23 @@ Run the deterministic engine fixture workflows against a real local HTTP server 
 
 Each invocation creates an isolated `var/smoke-*` state and does not reset existing state. The full-match fixture covers challenge reproduction and rejection, review, accepted regressions, repair, exact evidence-key selection, and export. The neither fixture keeps both candidates broken through the repair cap and verifies `neither` selection. The snapshot contains non-secret HTTP response samples for API/client comparison. These workflows use labeled fixtures; they are not a live Switch agent match and do not establish B-client integration. Do not report them as native-agent evidence or as final product completion.
 
-The v1 interface remains frozen in `contracts/arena-v1.json`, with its digest recorded in the contract loader. Sprint 3 did not change the manifest or its hash.
+The active interface is frozen in `contracts/arena-v1.1.json`, canonical SHA-256 `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`. The historical 1.0 manifest remains unchanged. `contract` and health report 1.1; the HTTP base remains `/api/v1`. Every API response carries `X-Arena-Mode: live`, including errors and artifact downloads. Match/Assignment include the original operator-recorded provider labels; unknown labels are null. The operator CLI defaults omitted labels to null.
+
+Existing initialized 1.0 state can be served without resetting workspaces, tokens, jobs or matches: 1.1 preserves the task and layout. New state records 1.1. Do not reinitialize an active match to upgrade it.
+
+## Verify the unchanged experience branch
+
+`scripts/smoke_experience.py` runs B's actual dashboard in Chromium and B's contestant CLI against a fresh live engine and restricted Docker runner. Supply a checkout/export of the experience branch with `web/` dependencies installed (`npm --prefix /path/to/experience/web ci`). The script never edits B's source. It creates a new `var/experience-smoke-*` runtime and stops its servers afterward.
+
+With system Chromium installed, prepare a separate browser-test environment:
+
+```sh
+python3 -m venv var/browser-tools
+var/browser-tools/bin/python -m pip install playwright==1.64.1
+var/browser-tools/bin/python scripts/smoke_experience.py \
+  --experience-root /path/to/experience --chromium /usr/bin/chromium
+```
+
+The engine interpreter defaults to `.venv/bin/python`; override with `--engine-python PATH` if needed. The browser uses direct API access with an exact-origin CORS setting on temporary ports. The dashboard creates a match with unknown labels, reveals submissions, accepts the reproduced requirement violation, starts repair, selects an eligible candidate, and inspects/downloads patch and JSON evidence. The unchanged CLI exercises all contestant commands and identical-request retries. Deterministic known-good/broken modules supply candidates, executed only by Docker. The selected patch is applied to a fresh disposable task base and rechecked against the full suite plus the accepted regression and BOOK-07 isolation. `summary.json`, `dashboard.png` and server logs stay under the new runtime directory. This is a fixture compatibility check, not a native Switch match.
 
 Run all checks, including the actual Docker tests, with `ARENA_DOCKER_TESTS=1 .venv/bin/python -m pytest -q engine/tests`. Tests without this variable explicitly skip Docker tests; a skip is not execution evidence.

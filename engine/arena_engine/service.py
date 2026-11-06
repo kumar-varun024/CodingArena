@@ -91,6 +91,7 @@ class Engine(Workflow):
 
     def _projection(self, db, match, actor):
         result = {k: v for k, v in match.items() if not k.startswith("_")}
+        result["provider_labels"] = match["_provider_labels"]
         result = json.loads(json.dumps(result))
         revealed = match["_revealed"]
         if actor != "operator" and not revealed:
@@ -116,7 +117,12 @@ class Engine(Workflow):
             if old:
                 if old["digest"] != body_digest:
                     raise ArenaError("IDEMPOTENCY_CONFLICT", "Request ID was used with a different body")
-                return json.loads(old["response"]), old["status"]
+                response = json.loads(old["response"])
+                # Upgrade cached 1.0 Match responses without changing their
+                # snapshot or retry identity. Labels were already persisted.
+                if "slots" in response and "match_id" in response and "provider_labels" not in response:
+                    response["provider_labels"] = self._match(db, response["match_id"])["_provider_labels"]
+                return response, old["status"]
             db.execute("SAVEPOINT operation")
             try:
                 response, status = operation(db)
@@ -181,6 +187,7 @@ class Engine(Workflow):
                     "spec_digest": match["spec_digest"], "suite_digest": match["suite_digest"],
                     "base_commit": self.runtime["base_commit"], "allowed_files": ["src/booking.py"],
                     "candidate_budget_minutes": match["_budget"],
+                    "provider_labels": match["_provider_labels"],
                     "workspace_path": str(self.settings.state_dir / f"workers/{slot}/worktree"),
                     "review_path": str(self.settings.state_dir / f"workers/{slot}/review/{target['candidate_id']}") if target else None,
                     "target_candidate_id": target["candidate_id"] if target else None,

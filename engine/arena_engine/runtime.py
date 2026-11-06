@@ -15,12 +15,14 @@ DEFAULT_IMAGE = "python@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a
 class Settings:
     state_dir: Path
     runner_image: str
+    ui_origin: str | None = None
 
     @classmethod
     def from_env(cls):
         return cls(
             Path(os.environ.get("ARENA_STATE_DIR", str(ROOT / "var"))).expanduser().absolute(),
             os.environ.get("ARENA_RUNNER_IMAGE", DEFAULT_IMAGE),
+            os.environ.get("ARENA_UI_ORIGIN") or None,
         )
 
 
