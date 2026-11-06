@@ -152,7 +152,7 @@ The Python and frontend HTTP tests bind temporary loopback ports. No provider
 credentials, Docker runner or cloud account are needed for these fixture checks.
 They exercise CLI routes, role visibility, jobs, exact retries, API errors,
 selection/neither, real stale 409 refresh, mode validation and storage failure.
-Native Switch setup is deferred at the user's request; see the honest
+Native Switch setup has resumed for the teammate's demo host; the native room round trip remains NOT RUN. See the honest
 [smoke record](../switch/smoke-record.json). These checks are not a completed live
 hackathon workflow.
 
@@ -186,7 +186,7 @@ No engine implementation or contract files were changed on the experience branch
 | --- | --- | --- |
 | 1 — client and fixtures | All contestant commands; durable retries; scoped mock HTTP service | 29 CLI tests and 10 fixture tests passed |
 | 2 — dashboard | Task, snapshots, challenges, decisions, jobs, timeline, downloads and journal | 10 HTTP/client/UI tests and production build passed; browser stale-selection recovery observed |
-| 3 — Switch preparation | Three-room instructions; build/review/repair prompts; manual setup and truthful demo | Documented commands validated against the actual CLI; native smoke intentionally deferred |
+| 3 — Switch preparation | Three-room instructions; build/review/repair prompts; manual setup and truthful demo | Documented commands validated against the actual CLI; native smoke now in setup; actual room round trip remains NOT RUN |
 | 4 — verification and integration checkpoint | Reviewed recovery boundaries, responsive browser UI and actual A-engine probe | Fixture checks pass; live integration awaits A's 1.1 implementation and user-provided Switch setup |
 
 A successful fixture gate is not a live workflow pass. Both runtime agents, the

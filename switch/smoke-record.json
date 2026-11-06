@@ -1,6 +1,6 @@
 {
   "status": "not_run",
-  "setup_disposition": "user_deferred",
+  "setup_disposition": "in_progress",
   "native_round_trip_observed": false,
   "console_version": null,
   "runtime_kind": null,
@@ -13,7 +13,27 @@
   "human_message_id": null,
   "agent_reply_message_id": null,
   "command_output": null,
-  "observation": "Development workspace preflight found no switch executable on PATH and no Switch/Mattermost process names. No authenticated Console/server/room/provider session was supplied or observed. This does not establish whether Switch exists on another machine.",
-  "blocker": "User chose to set up Switch later and continue building. A designated runtime host with Switch Console/server, a signed-in provider, registered slot agents, and a human-accessible room is still required for the native smoke. This checkpoint is deferred, not failed.",
-  "next_step": "Follow docs/switch.md, retain genuine room output and IDs when available, and replace null fields only with observed values. A direct arena_smoke.py run is not a native smoke pass."
+  "observation": "User requested completion of Role B Switch setup and selected the teammate's machine as the demo host. No connection to that machine or authenticated Console/room/provider session has yet been supplied. Local preflight found no Console installation; Docker Engine 29.1.3 is reachable outside the restricted tool sandbox, but docker compose is unavailable here. These local findings do not describe the teammate's machine.",
+  "blocker": "Await teammate host OS, Console installation state and available SSH/server access. A must provide actual pre-created worker roots on that host. Native room round trips remain unobserved.",
+  "next_step": "Run the Role B runtime installer on the actual pre-initialized engine host, configure native Console and provider through their supported setup, then observe a human-addressed smoke command and real room reply for each agent.",
+  "demo_host_choice": "teammate_machine",
+  "setup_requested_at": "2026-11-06",
+  "agents": {
+    "a": {
+      "status": "not_run",
+      "registered_directory": null,
+      "room_id": null,
+      "human_message_id": null,
+      "agent_reply_message_id": null,
+      "command_output": null
+    },
+    "b": {
+      "status": "not_run",
+      "registered_directory": null,
+      "room_id": null,
+      "human_message_id": null,
+      "agent_reply_message_id": null,
+      "command_output": null
+    }
+  }
 }
