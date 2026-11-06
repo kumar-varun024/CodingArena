@@ -2,7 +2,7 @@
 
 This setup uses interface **1.1**, HTTP base `/api/v1`, and task `booking-v1`. The contract hash is `c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f`. Both product branches must use that revision. The two development chats are not the two runtime contestants.
 
-The native room round trip is currently **NOT RUN — setup deferred by the user** while implementation continues. No authenticated Switch server/Console/room session was supplied or observed; `switch` was not on PATH and no Switch/Mattermost process names were found. This is a local observation, not a statement about another machine, and the checkpoint has not failed. See [the smoke record](../switch/smoke-record.json). Fixture tests and a direct Python command do not satisfy the native checkpoint.
+The native room round trip is currently **NOT RUN — setup in progress**. The user is Role B and selected their teammate's machine as the demo host. Role A (the teammate) owns engine bootstrap and final integration; Role B installs the client/prompts and configures the native Switch experience. The teammate host OS, Console installation state and access details are still to be confirmed. No authenticated Switch room/provider session on that host has been observed. See [the smoke record](../switch/smoke-record.json). Fixture tests and a direct Python command do not satisfy the native checkpoint.
 
 ## Choose and prepare one demo host
 
@@ -30,6 +30,74 @@ cp switch/prompts/*.md "$TASK_SLOT_ROOT/.arena/prompts/"
 ```
 
 Repeat with slot B's actual root. Do not copy or read the operator token into either root. Tokens are engine-created mode 0600; do not print them. Fetch `Assignment.workspace_path`/`review_path` rather than deriving a writable opponent path.
+
+## Setup on the selected teammate host
+
+Perform these steps on the teammate's machine. Do not install Console on the
+Role B development laptop just to make its local checks green. If SSH access is
+available, it can be used for the file installation and read-only preflight;
+Console registration and provider sign-in still use the supported native UI.
+Do not share credentials in chat.
+
+1. Confirm the host OS and install the matching build from the
+   [official Console installer page](https://docs.switchagents.ai/switch-rooms/getting-started/install-switch-console).
+   For Ubuntu x86_64, the `.deb` is the documented preference. Linux local-stack
+   setup also needs working Docker and its Compose plugin; check `docker info`
+   and `docker compose version` as the same user who launches Console. See
+   [the official Docker/Compose troubleshooting notes](https://docs.switchagents.ai/switch-rooms/resources/troubleshooting#cant-reach-docker). The
+   presence of a Docker executable alone is insufficient.
+2. In Console, add a local server and wait for its bundled messaging stack to
+   become available. Link the human's messaging identity so addressed requests
+   are recognized. The local-server path is suitable for the demonstration; do
+   not assume a colleague can log into this host-only Console server remotely.
+   Use an already-accessible chat bridge if participation is from another host.
+3. Have Role A initialize the engine runtime in the state directory chosen for
+   the demo. Use the absolute state directory actually created by A. Do not
+   initialize/reset the product checkout or invent worker roots. No match needs
+   to be active for the harmless native smoke.
+4. Install the B-owned runtime materials into those existing roots using the
+   installer below. The agent's Directory is the printed **slot root**, not the
+   product repository or the nested editable worktree.
+5. Confirm the chosen coding provider is signed in on this host, then register
+   `arena-a` and `arena-b`, create the three rooms, and observe the smoke steps
+   later in this guide. If those names already belong to other agents, coordinate
+   names rather than deleting or taking over an unrelated registration.
+
+The engine branch fetched during this setup is Sprint 3 commit
+`dffecf4829f851074254d919ec4e21a577dd639c`. Its canonical loader still pins interface 1.0 and the
+original hash. Native local-command smoke can proceed on the stable roots while
+A aligns the engine to 1.1. Assignment/submission/full-match verification must
+wait for that alignment; do not weaken client validation.
+
+## Install Role B runtime files
+
+Use a checkout of `feat/arena-experience` or the prepared Role B setup bundle on
+the actual demo host. This does not require merging the feature branches first.
+The following commands use a POSIX shell (Linux/macOS); substitute the real
+absolute state directory initialized by A. `--check` is a dry run:
+
+```sh
+python3 switch/install_runtime.py --state-dir /absolute/engine/state --api-url http://127.0.0.1:8765 --check
+python3 switch/install_runtime.py --state-dir /absolute/engine/state --api-url http://127.0.0.1:8765
+```
+
+The installer requires both existing worker roots, task Git directories and
+slot-token files. It does not create/reset engine state, read or copy tokens,
+start providers, or register Switch agents. It installs only B's client, smoke
+helper, prompts and generated Console instructions under each slot's `.arena/`.
+It checks both slots before making changes. Re-running with identical files is
+safe; changed existing files require an explicit `--replace` update. Never use
+`--replace` to overwrite unrelated files.
+
+The JSON result identifies each slot's root and `console-instructions.md` file.
+Paste that file's text into the corresponding agent's native Console instructions.
+It contains real paths and a harmless smoke command, with no token values or
+invented match ID. Set Directory to that slot root exactly. Once A creates the
+match, the human supplies its real match ID in the build room prompt.
+
+For a teammate host without this chat's SSH access, the files and instructions are
+ready for local execution there. Report only non-secret command status, version,
+paths and genuine room output; keep provider login and tokens on the host.
 
 ## Configure Console manually
 
