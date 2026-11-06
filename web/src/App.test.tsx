@@ -6,16 +6,23 @@ import { ArenaApi } from './api';
 import { startFixture } from './test/fixture';
 
 let fixture: Awaited<ReturnType<typeof startFixture>>;
-beforeAll(async () => { fixture = await startFixture(); });
+beforeAll(async () => {
+  fixture = await startFixture();
+});
 afterAll(() => fixture.close());
-beforeEach(() => { localStorage.clear(); });
+beforeEach(() => {
+  localStorage.clear();
+});
 async function connect(id: string) {
   const user = userEvent.setup();
   render(<App api={new ArenaApi(fixture.baseUrl)} initialMatch={id} pollInterval={60000} />);
   await user.type(screen.getByLabelText('Operator token'), 'fixture-operator');
   await user.click(screen.getByRole('button', { name: 'Connect / refresh' }));
   await screen.findByRole('heading', { name: 'Contender A' });
-  await user.type(screen.getByLabelText('Decision / action reason'), 'The recorded evidence supports this explicit operator decision.');
+  await user.type(
+    screen.getByLabelText('Decision / action reason'),
+    'The recorded evidence supports this explicit operator decision.',
+  );
   return user;
 }
 
@@ -47,10 +54,16 @@ describe('dashboard decisions through the actual HTTP API client', () => {
   it('refreshes after a real stale-selection 409, preserves the error, and disables stale code', async () => {
     const user = await connect('fixture-stale');
     await user.click(screen.getByRole('button', { name: 'Select contender A' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Select contender A' })).toBeDisabled());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Select contender A' })).toBeDisabled(),
+    );
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('STALE_SNAPSHOT'));
-    expect(screen.queryByText('Action recorded. Refreshing measured evidence.')).not.toBeInTheDocument();
-    expect(screen.getAllByText('The suite changed. Full verification must run again.')).toHaveLength(2);
+    expect(
+      screen.queryByText('Action recorded. Refreshing measured evidence.'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByText('The suite changed. Full verification must run again.'),
+    ).toHaveLength(2);
   });
   it('shows infrastructure failure as unknown eligibility and distinguishes job types', async () => {
     await connect('fixture-error');

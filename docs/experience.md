@@ -192,3 +192,10 @@ No engine implementation or contract files were changed on the experience branch
 A successful fixture gate is not a live workflow pass. Both runtime agents, the
 restricted Docker runner and fresh exported-patch verification remain final
 integration requirements owned jointly with A on the designated demo machine.
+
+A later fetch observed engine Sprint 2 commit
+`d376bd5c5a1ecc879ca990e8f19d29fec1c4b44d`. Static inspection confirms its
+canonical manifest still declares 1.0 with the original hash and no response-mode
+header convention. The HTTP probe above remains specifically evidence for the
+earlier immutable Sprint 1 snapshot; it is not a claim that the newer assignment
+implementation is absent. Both owners still need to align on 1.1 before live QA.

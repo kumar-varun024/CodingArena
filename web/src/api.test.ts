@@ -4,16 +4,24 @@ import type { Health, Match } from './types';
 import { startFixture } from './test/fixture';
 
 let fixture: Awaited<ReturnType<typeof startFixture>>;
-beforeAll(async () => { fixture = await startFixture(); });
+beforeAll(async () => {
+  fixture = await startFixture();
+});
 afterAll(() => fixture.close());
-beforeEach(() => { localStorage.clear(); vi.unstubAllGlobals(); });
+beforeEach(() => {
+  localStorage.clear();
+  vi.unstubAllGlobals();
+});
 
 describe('the actual HTTP API client', () => {
   it('uses fixture mode for JSON, API errors and text artifacts without changing body shapes', async () => {
     const api = new ArenaApi(fixture.baseUrl);
     expect((await api.get<Health>('/health')).mode).toBe('fixture');
     expect(api.mode).toBe('fixture');
-    await expect(api.get('/matches/fixture-decision')).rejects.toMatchObject({ code: 'UNAUTHORIZED', status: 401 });
+    await expect(api.get('/matches/fixture-decision')).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+      status: 401,
+    });
     api.setToken('fixture-operator');
     const match = await api.get<Match>('/matches/fixture-decision');
     expect(match.provider_labels).toEqual({ a: null, b: null });
@@ -33,31 +41,59 @@ describe('the actual HTTP API client', () => {
       expect(JSON.stringify(readJournal())).not.toContain('fixture-operator');
       observed.push(String(options.body));
       const response = await actualFetch(url, options);
-      if (loseResponse) { loseResponse = false; throw new TypeError('Connection lost after server committed.'); }
+      if (loseResponse) {
+        loseResponse = false;
+        throw new TypeError('Connection lost after server committed.');
+      }
       return response;
     });
-    const payload = { selection: 'neither', candidate_id: null, expected_evidence_key: null, reason: 'Recorded checks did not establish an acceptable candidate.' };
-    await expect(api.mutate('/matches/fixture-neither/selection', payload)).rejects.toMatchObject({ code: 'AMBIGUOUS_REQUEST' });
+    const payload = {
+      selection: 'neither',
+      candidate_id: null,
+      expected_evidence_key: null,
+      reason: 'Recorded checks did not establish an acceptable candidate.',
+    };
+    await expect(api.mutate('/matches/fixture-neither/selection', payload)).rejects.toMatchObject({
+      code: 'AMBIGUOUS_REQUEST',
+    });
     const saved = readJournal()[0];
     expect(saved.state).toBe('ambiguous');
     const result = await api.retry<Match>(saved);
     expect(result.phase).toBe('complete');
     expect(observed[0]).toBe(observed[1]);
     expect(readJournal()[0].state).toBe('completed');
-    await expect(api.mutate(saved.path, { ...payload, reason: 'Changed body' }, saved.request_id)).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
+    expect(saved.mode).toBe('fixture');
+    expect(saved.body.source).toMatchObject({ kind: 'fixture' });
+    api.mode = 'live';
+    expect(() => api.retry(saved)).toThrow('same saved API origin and fixture/live mode');
+    api.mode = 'fixture';
+    await expect(
+      api.mutate(saved.path, { ...payload, reason: 'Changed body' }, saved.request_id),
+    ).rejects.toMatchObject({ code: 'IDEMPOTENCY_CONFLICT' });
   });
   it('refuses mutations when durable storage fails', async () => {
-    const api = new ArenaApi(fixture.baseUrl); api.setToken('fixture-operator');
+    const api = new ArenaApi(fixture.baseUrl);
+    api.setToken('fixture-operator');
     await api.get('/health');
-    const fetchSpy = vi.fn(); vi.stubGlobal('fetch', fetchSpy);
-    const storageSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full storage'); });
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const storageSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Full storage');
+    });
     await expect(api.mutate('/matches', {})).rejects.toMatchObject({ code: 'JOURNAL_ERROR' });
-    expect(fetchSpy).not.toHaveBeenCalled(); storageSpy.mockRestore();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    storageSpy.mockRestore();
   });
   it('marks missing or contradictory mode headers as unknown', async () => {
     const api = new ArenaApi(fixture.baseUrl);
-    for (const headers of ([{ 'content-type': 'application/json' }, { 'content-type': 'application/json', 'X-Arena-Mode': 'live' }] as Record<string, string>[])) {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ mode: 'fixture' }), { headers })));
+    for (const headers of [
+      { 'content-type': 'application/json' },
+      { 'content-type': 'application/json', 'X-Arena-Mode': 'live' },
+    ] as Record<string, string>[]) {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(JSON.stringify({ mode: 'fixture' }), { headers })),
+      );
       await expect(api.get('/health')).rejects.toMatchObject({ code: 'PROTOCOL_ERROR' });
       expect(api.mode).toBeNull();
     }
