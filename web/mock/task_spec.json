@@ -1,0 +1,57 @@
+{
+  "challenge_example": {
+    "capacity": 3,
+    "steps": [
+      {
+        "args": [
+          "family",
+          2
+        ],
+        "expected": true,
+        "op": "book"
+      },
+      {
+        "args": [
+          "family"
+        ],
+        "expected": true,
+        "op": "cancel"
+      },
+      {
+        "args": [
+          "family"
+        ],
+        "expected": false,
+        "op": "cancel"
+      },
+      {
+        "args": [],
+        "expected": 3,
+        "op": "available"
+      },
+      {
+        "args": [],
+        "expected": {},
+        "op": "reservations"
+      }
+    ]
+  },
+  "constructor": "BookingSystem(capacity: int), capacity >=1",
+  "excluded": "No web booking application, persistence, simultaneous threads, payment, account login, arbitrary dependencies or network calls in the contestant task. These can be later task packs.",
+  "file": "src/booking.py",
+  "methods": [
+    "book(booking_id: str, seats: int) -> bool",
+    "cancel(booking_id: str) -> bool",
+    "available() -> int",
+    "reservations() -> dict[str, int]"
+  ],
+  "requirements": {
+    "BOOK-01": "A successful booking reserves exactly seats; capacity can never be exceeded.",
+    "BOOK-02": "Insufficient capacity returns False and leaves the entire reservation state unchanged; group bookings are all-or-nothing.",
+    "BOOK-03": "Cancelling an existing reservation returns True, removes it and releases exactly its booked seats.",
+    "BOOK-04": "Cancelling an unknown or already-cancelled ID returns False and changes nothing.",
+    "BOOK-05": "An already-active booking ID returns False and changes nothing. A cancelled ID may be reused.",
+    "BOOK-06": "book returns False without mutation for empty/non-string ID, non-integer seats (including bool), or seats <=0. cancel with empty/non-string ID also returns False without mutation.",
+    "BOOK-07": "available() equals capacity minus all active seats; reservations() returns the active ID-to-seat mapping. Different BookingSystem instances do not share bookings."
+  }
+}

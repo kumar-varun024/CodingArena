@@ -1,0 +1,12 @@
+{
+  "check_id": "BOOK-02",
+  "scenario": {
+    "capacity": 4,
+    "steps": [
+      {"op": "book", "args": ["existing", 3], "expected": true},
+      {"op": "book", "args": ["group", 2], "expected": false},
+      {"op": "available", "args": [], "expected": 1},
+      {"op": "reservations", "args": [], "expected": {"existing": 3}}
+    ]
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "recorded_at": "2026-11-07T09:23:57.386577+00:00",
+  "status": "native_workflow_and_export_verified_demo_pending",
+  "source_commits": {
+    "engine": "e9376594112b8cfc73ebdf7ba434c95bcebb7058",
+    "experience": "02562c564f052416ce016c7c6720ca0c6d69002e",
+    "engine_integration_fixes": "2c82a2f62248a6347a3eff2b72d8b86e69239220"
+  },
+  "contract_version": "1.1",
+  "contract_sha256": "c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f",
+  "archived_1_0_sha256": "3e6a106d89e05d323d5fe280117d63e937fde6e134e8dda7ae65fcc914eeec80",
+  "checks": {
+    "engine_with_docker": 115,
+    "bridge": 29,
+    "mock": 10,
+    "web": 10,
+    "runtime_installer": 10,
+    "web_build": "passed",
+    "web_node_version": "22.23.4",
+    "dashboard_api_read_checks": 5
+  },
+  "fixture_runs": {
+    "selected": {
+      "match_id": "match_5b0344048f4d4f2ca2aed7e9cd0f492a",
+      "phase": "complete",
+      "selection": "b",
+      "repair_round": 1,
+      "patch_present": true,
+      "patch_verified_on_fresh_base": true,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": false
+    },
+    "neither": {
+      "match_id": "match_17becfa2b09441ffba483d8f91e7da8d",
+      "phase": "complete",
+      "selection": "neither",
+      "repair_round": 2,
+      "patch_present": false,
+      "patch_verified_on_fresh_base": false,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": false
+    },
+    "runner_recovery": {
+      "match_id": "match_952bc8d1121949aeb88738dda05840ee",
+      "phase": "complete",
+      "selection": "b",
+      "repair_round": 1,
+      "patch_present": true,
+      "patch_verified_on_fresh_base": true,
+      "official_check_counts": {
+        "a": 12,
+        "b": 12
+      },
+      "injected_failure": true
+    }
+  },
+  "browser": {
+    "live_health_1_1": "observed",
+    "authenticated_live_ui": "reveal_in_user_screenshots_corroborated_by_engine",
+    "fixture_neither_and_evidence": "passed",
+    "fixture_console_errors": 0
+  },
+  "native_switch": {
+    "status": "completed_match_and_export_verified",
+    "console_version": "0.40.1",
+    "official_package_sha256": "7a7cd1cc2c3a33f748252db14ebf399c8359046ed434942bcfbd641ca78ccd8e",
+    "console_launch_observed": true,
+    "docker_compose_version": "5.7.0",
+    "codex_cli_signed_in_observed": true,
+    "console_provider_readiness": {
+      "provider": "Codex",
+      "configured_model": "gpt-6-sol",
+      "provenance": "user_reported_console_settings",
+      "runtime_model_identity_verified": false
+    },
+    "registered_agents": {
+      "names": [
+        "arena-a",
+        "arena-b"
+      ],
+      "provenance": "user_provided_switch_screenshots"
+    },
+    "room_ids": null,
+    "message_ids": {
+      "smoke_a": "1xuscuqcrjr6pr9zbhohirfmry",
+      "smoke_b": "3nnumh5a8t8fxjzao3fgcte9eo",
+      "provenance": "user_provided_mattermost_permalinks"
+    },
+    "blocker": null,
+    "initial_build": {
+      "match_id": "match_774ce14a30d742baa1cd59d07c239ec5",
+      "engine_verified": true,
+      "native_room_evidence": "user_provided_screenshots",
+      "independent_mattermost_fetch": false,
+      "verification": {
+        "a": {
+          "candidate_id": "candidate_3bc0c0fde4d543488d4be9851a891710",
+          "job_id": "job_39da03653b864e3aa31f073858e78c21",
+          "status": "passed",
+          "check_count": 11
+        },
+        "b": {
+          "candidate_id": "candidate_ec8f53cd6fb44c23a25e155fc97ed2e5",
+          "job_id": "job_0a4a797dcf4e4551b5bb126050d423c9",
+          "status": "passed",
+          "check_count": 11
+        }
+      }
+    },
+    "current_phase": "complete",
+    "remaining": [
+      "submission_video",
+      "final_submission"
+    ],
+    "final_match": {
+      "match_id": "match_774ce14a30d742baa1cd59d07c239ec5",
+      "selection": "a",
+      "selected_candidate_id": "candidate_3bc0c0fde4d543488d4be9851a891710",
+      "operator_reason": "Both candidates passed current full verification and completed cross-review with no challenges. I select contender A as the operator's demo tie-break.",
+      "repair_round": 0,
+      "challenges": 0,
+      "reviews": {
+        "a": true,
+        "b": true
+      },
+      "final_verification": {
+        "a": {
+          "job_id": "job_f8d9311b962b488382821761b93e68b7",
+          "eligibility": "eligible",
+          "status": "passed",
+          "check_count": 11
+        },
+        "b": {
+          "job_id": "job_401b880684a64d06b310ee59332de062",
+          "eligibility": "eligible",
+          "status": "passed",
+          "check_count": 11
+        }
+      }
+    },
+    "export_validation": {
+      "record": "contracts/native-export-validation.json",
+      "patch_applied_to_fresh_base": true,
+      "frozen_digests_verified": true,
+      "docker_checks_passed": 11,
+      "files_sha256": {
+        "candidate.patch": "f529a3e8910306b662d18f02b677916893bf5b47009d1dbc8843046f92eae63f",
+        "evidence.json": "9540d399b48a9f789fbed53022a442a0a0b1e3efcc35761290259249e1dd4538",
+        "summary.md": "9d0d4c9adec62a02f8b93f1780ac6e6d5b074d3e84c28447848d7ebe9c204900"
+      }
+    }
+  },
+  "submission": {
+    "required_video": "pending_under_3_minutes_public_or_unlisted_youtube_or_loom",
+    "live_deployment": "optional_not_required",
+    "form_submission": "not_submitted",
+    "repository_is_public": true
+  },
+  "pre_recording_audit": {
+    "role_a_latest": "e9376594112b8cfc73ebdf7ba434c95bcebb7058",
+    "role_b_latest": "02562c564f052416ce016c7c6720ca0c6d69002e",
+    "engine_docker_tests": 115,
+    "focused_contract_checks": 20,
+    "ci": "no_github_actions_workflows_or_status_checks_configured",
+    "reconciliation": "Retained integration middleware, archive loader and cancellation checks; incorporated nonblank challenge-title validation, original contract regressions and historical assets.",
+    "role_b_status_docs_to_sync": [
+      "docs/switch.md",
+      "switch/smoke-record.json"
+    ],
+    "recording_ready": true,
+    "main_merged": false
+  }
+}
