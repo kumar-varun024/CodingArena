@@ -1,8 +1,8 @@
 {
-  "recorded_at": "2026-11-07T09:10:56.892454+00:00",
+  "recorded_at": "2026-11-07T09:23:57.386577+00:00",
   "status": "native_workflow_and_export_verified_demo_pending",
   "source_commits": {
-    "engine": "dffecf4829f851074254d919ec4e21a577dd639c",
+    "engine": "e9376594112b8cfc73ebdf7ba434c95bcebb7058",
     "experience": "02562c564f052416ce016c7c6720ca0c6d69002e",
     "engine_integration_fixes": "2c82a2f62248a6347a3eff2b72d8b86e69239220"
   },
@@ -10,7 +10,7 @@
   "contract_sha256": "c09582b2f82ee5ce5148f1701bbfcc8f8e93f31f18acb0863d6f5d717041708f",
   "archived_1_0_sha256": "3e6a106d89e05d323d5fe280117d63e937fde6e134e8dda7ae65fcc914eeec80",
   "checks": {
-    "engine_with_docker": 108,
+    "engine_with_docker": 115,
     "bridge": 29,
     "mock": 10,
     "web": 10,
@@ -161,5 +161,19 @@
     "live_deployment": "optional_not_required",
     "form_submission": "not_submitted",
     "repository_is_public": true
+  },
+  "pre_recording_audit": {
+    "role_a_latest": "e9376594112b8cfc73ebdf7ba434c95bcebb7058",
+    "role_b_latest": "02562c564f052416ce016c7c6720ca0c6d69002e",
+    "engine_docker_tests": 115,
+    "focused_contract_checks": 20,
+    "ci": "no_github_actions_workflows_or_status_checks_configured",
+    "reconciliation": "Retained integration middleware, archive loader and cancellation checks; incorporated nonblank challenge-title validation, original contract regressions and historical assets.",
+    "role_b_status_docs_to_sync": [
+      "docs/switch.md",
+      "switch/smoke-record.json"
+    ],
+    "recording_ready": true,
+    "main_merged": false
   }
 }

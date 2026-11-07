@@ -52,7 +52,7 @@ The following checks have passed on the merged integration tree:
 
 | Check | Evidence |
 | --- | --- |
-| Engine | 108 tests with Docker enabled; selected patch applied to a fresh task base and passed 12 checks; separate neither result exported no patch |
+| Engine | 115 tests with Docker enabled; selected patch applied to a fresh task base and passed 12 checks; separate neither result exported no patch |
 | Switch bridge | 29 tests |
 | HTTP fixture service | 10 tests |
 | Dashboard | 10 tests and production build on Node 22.23.4 |

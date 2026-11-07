@@ -59,6 +59,13 @@ class ChallengeRequest(Mutation):
     requirement_ids: Annotated[list[Literal["BOOK-01", "BOOK-02", "BOOK-03", "BOOK-04", "BOOK-05", "BOOK-06", "BOOK-07"]], Field(min_length=1, max_length=7)]
     scenario: dict
 
+    @field_validator("title")
+    @classmethod
+    def nonblank_title(cls, value):
+        if not value.strip():
+            raise ValueError("challenge title must be non-empty")
+        return value
+
     @field_validator("requirement_ids")
     @classmethod
     def unique_requirements(cls, value):

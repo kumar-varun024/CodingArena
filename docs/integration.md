@@ -69,6 +69,13 @@ Current sprint: **4 — Integration and demo**. The combined native match and se
 - The actual submission form requires a public repository, a README explaining Switch/agents/channels/setup, a video under three minutes on public or unlisted YouTube/Loom, project/track details, a description of Switch use and feedback. Deployment is optional. The public FAQ lists November 7, 11:59 PM IST; the user's working target is 11 PM IST.
 - **Remaining:** record/upload the concise real-workflow video, add its URL, review the final form and submit. No submission confirmation or published video is claimed. Main merge requires an explicit user action; the combined public branch is available through the integration PR.
 
+## Pre-recording branch audit (2026-11-07)
+
+- Reconciled the latest engine head `e937659` with the existing integration fixes and latest experience head `02562c5`. Kept duplicate-JSON handling, archived 1.0 loading, persisted labels and cancellation isolation. Brought in the additional whitespace-only challenge-title rejection and original regression tests. Marked the recovered Sprint 2/3 handoff historical; its old 1.0 setup is not the current guide. The recovered optional browser fixture harness was syntax-checked, not used as native evidence.
+- **115 engine tests passed with Docker enabled**, no skips; the focused contract/foundation checks also passed. Existing B checks remain 29 bridge, 10 mock, 10 frontend, 10 installer plus typecheck/build. This repository has no GitHub Actions workflows or status checks; no hosted CI pass is claimed.
+- Both implementations are ready for recording. Role B's `docs/switch.md` and `switch/smoke-record.json` still contain the earlier not-run setup status; their owner should sync those to the integrated checkpoint with honest provenance. The required video and final submission remain pending.
+- Merge the combined integration PR into `main` after final gates and explicit user initiation. Do not merge the two overlapping role PRs separately. Use a normal merge commit to preserve both role histories; feature branches can remain until submission is confirmed.
+
 ## Integration sequence (Sprint 4 only)
 
 1. Collect both pushed feature SHAs, test evidence, draft PRs and matching canonical contract hashes. Freeze optional additions.
