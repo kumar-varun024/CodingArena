@@ -1,0 +1,331 @@
+[
+  {
+    "check_id": "BOOK-01",
+    "scenario": {
+      "capacity": 5,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "a",
+            3
+          ],
+          "expected": true
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 2
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "a": 3
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-02",
+    "scenario": {
+      "capacity": 4,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "a",
+            3
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "b",
+            2
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 1
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "a": 3
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-03",
+    "scenario": {
+      "capacity": 6,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "a",
+            4
+          ],
+          "expected": true
+        },
+        {
+          "op": "cancel",
+          "args": [
+            "a"
+          ],
+          "expected": true
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 6
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {}
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-04",
+    "scenario": {
+      "capacity": 3,
+      "steps": [
+        {
+          "op": "cancel",
+          "args": [
+            "missing"
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "a",
+            2
+          ],
+          "expected": true
+        },
+        {
+          "op": "cancel",
+          "args": [
+            "a"
+          ],
+          "expected": true
+        },
+        {
+          "op": "cancel",
+          "args": [
+            "a"
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 3
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {}
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-05",
+    "scenario": {
+      "capacity": 6,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "a",
+            2
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "a",
+            3
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 4
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "a": 2
+          }
+        },
+        {
+          "op": "cancel",
+          "args": [
+            "a"
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "a",
+            4
+          ],
+          "expected": true
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "a": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-06",
+    "scenario": {
+      "capacity": 5,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "ok",
+            2
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "",
+            1
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            7,
+            1
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "zero",
+            0
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "negative",
+            -1
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "fraction",
+            1.5
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "boolean",
+            true
+          ],
+          "expected": false
+        },
+        {
+          "op": "cancel",
+          "args": [
+            ""
+          ],
+          "expected": false
+        },
+        {
+          "op": "cancel",
+          "args": [
+            null
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 3
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "ok": 2
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "BOOK-07",
+    "scenario": {
+      "capacity": 5,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "a",
+            2
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "b",
+            1
+          ],
+          "expected": true
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 2
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "a": 2,
+            "b": 1
+          }
+        }
+      ]
+    }
+  }
+]

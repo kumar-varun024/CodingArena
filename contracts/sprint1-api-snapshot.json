@@ -1,0 +1,11 @@
+{
+  "method": "GET",
+  "path": "/api/v1/health",
+  "status": 200,
+  "body": {
+    "api_version": "1.0",
+    "mode": "live",
+    "runner_available": false,
+    "status": "ok"
+  }
+}

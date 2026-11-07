@@ -1,0 +1,125 @@
+[
+  {
+    "check_id": "HELD-BOOK-02",
+    "scenario": {
+      "capacity": 5,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "first",
+            3
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "group",
+            3
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 2
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "first": 3
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "HELD-BOOK-05",
+    "scenario": {
+      "capacity": 4,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "reused",
+            1
+          ],
+          "expected": true
+        },
+        {
+          "op": "cancel",
+          "args": [
+            "reused"
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "reused",
+            4
+          ],
+          "expected": true
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 0
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "reused": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "check_id": "HELD-BOOK-06",
+    "scenario": {
+      "capacity": 3,
+      "steps": [
+        {
+          "op": "book",
+          "args": [
+            "valid",
+            1
+          ],
+          "expected": true
+        },
+        {
+          "op": "book",
+          "args": [
+            "bool",
+            false
+          ],
+          "expected": false
+        },
+        {
+          "op": "book",
+          "args": [
+            "bool",
+            true
+          ],
+          "expected": false
+        },
+        {
+          "op": "available",
+          "args": [],
+          "expected": 2
+        },
+        {
+          "op": "reservations",
+          "args": [],
+          "expected": {
+            "valid": 1
+          }
+        }
+      ]
+    }
+  }
+]

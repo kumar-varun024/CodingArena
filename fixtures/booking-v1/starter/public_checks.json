@@ -1,0 +1,30 @@
+[
+  {
+    "check_id": "BOOK-01",
+    "description": "single booking consumes requested seats"
+  },
+  {
+    "check_id": "BOOK-02",
+    "description": "over-capacity group booking is atomic"
+  },
+  {
+    "check_id": "BOOK-03",
+    "description": "cancel releases exact booked seats"
+  },
+  {
+    "check_id": "BOOK-04",
+    "description": "unknown and repeated cancellation are no-ops"
+  },
+  {
+    "check_id": "BOOK-05",
+    "description": "active ID rejects duplicate and cancelled ID can be reused"
+  },
+  {
+    "check_id": "BOOK-06",
+    "description": "invalid IDs and seat counts do not mutate state"
+  },
+  {
+    "check_id": "BOOK-07",
+    "description": "queries report active bookings and remaining capacity"
+  }
+]
