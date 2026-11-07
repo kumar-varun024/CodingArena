@@ -18,14 +18,16 @@ Checks passed: **174 automated tests** across 115 engine tests with Docker, 29 b
 
 The genuine match is **complete**: both contestants submitted distinct commits, both completed cross-review with no concrete violations found, and both passed fresh final verification **11/11**. The human selected A with an explicit demo tie-break reason. Its exported patch applied to a fresh disposable task base and passed **11/11** checks in the restricted Docker runner. Candidate, specification, suite and runner digests matched the recorded evidence. No challenge was accepted and no repair round was needed in this native run.
 
-Native room screenshots/messages were supplied by the operator and corroborated against live engine records; they were not independently fetched from Mattermost. The configured Codex model was operator-reported as `gpt-6-sol`; runtime model identity, provider cost and generation timing were not independently measured. See the [native patch-validation record](contracts/native-export-validation.json) and [integration checkpoint](contracts/integration-checkpoint.json). The short submission video is still to be recorded; no final submission is claimed.
+Native room screenshots/messages were supplied by the operator and corroborated against live engine records; they were not independently fetched from Mattermost. The configured Codex model was operator-reported as `gpt-6-sol`; runtime model identity, provider cost and generation timing were not independently measured. See the [native patch-validation record](contracts/native-export-validation.json) and [integration checkpoint](contracts/integration-checkpoint.json).
+
+An edited prototype video (2:54) has now been prepared from a second native match (`match_bfb81e28fa5f457f9498a160d01baf72`). In that recorded run, both candidates passed initial and final verification 11/11, both completed cross-review without challenges, and the operator selected A and downloaded the patch and evidence. The public video URL will be added after upload; final submission is not claimed.
 
 ## Run locally
 
-The combined implementation is on `feat/arena-integration` while the final PR is reviewed:
+The engine, dashboard, and Switch runtime materials are included together in this repository:
 
 ```sh
-git clone --branch feat/arena-integration https://github.com/kumar-varun024/CodingArena.git
+git clone https://github.com/kumar-varun024/CodingArena.git
 cd CodingArena
 ```
 
