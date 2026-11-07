@@ -1,6 +1,6 @@
 {
-  "recorded_at": "2026-11-06T17:21:43.752357+00:00",
-  "status": "combined_checks_passed_native_review_in_progress",
+  "recorded_at": "2026-11-07T09:10:56.892454+00:00",
+  "status": "native_workflow_and_export_verified_demo_pending",
   "source_commits": {
     "engine": "dffecf4829f851074254d919ec4e21a577dd639c",
     "experience": "02562c564f052416ce016c7c6720ca0c6d69002e",
@@ -67,7 +67,7 @@
     "fixture_console_errors": 0
   },
   "native_switch": {
-    "status": "in_progress_initial_build_verified",
+    "status": "completed_match_and_export_verified",
     "console_version": "0.40.1",
     "official_package_sha256": "7a7cd1cc2c3a33f748252db14ebf399c8359046ed434942bcfbd641ca78ccd8e",
     "console_launch_observed": true,
@@ -113,14 +113,53 @@
         }
       }
     },
-    "current_phase": "reviewing",
+    "current_phase": "complete",
     "remaining": [
-      "cross_review",
-      "human_adjudication",
-      "final_verification",
-      "selection",
-      "native_export_validation",
-      "final_demo"
-    ]
+      "submission_video",
+      "final_submission"
+    ],
+    "final_match": {
+      "match_id": "match_774ce14a30d742baa1cd59d07c239ec5",
+      "selection": "a",
+      "selected_candidate_id": "candidate_3bc0c0fde4d543488d4be9851a891710",
+      "operator_reason": "Both candidates passed current full verification and completed cross-review with no challenges. I select contender A as the operator's demo tie-break.",
+      "repair_round": 0,
+      "challenges": 0,
+      "reviews": {
+        "a": true,
+        "b": true
+      },
+      "final_verification": {
+        "a": {
+          "job_id": "job_f8d9311b962b488382821761b93e68b7",
+          "eligibility": "eligible",
+          "status": "passed",
+          "check_count": 11
+        },
+        "b": {
+          "job_id": "job_401b880684a64d06b310ee59332de062",
+          "eligibility": "eligible",
+          "status": "passed",
+          "check_count": 11
+        }
+      }
+    },
+    "export_validation": {
+      "record": "contracts/native-export-validation.json",
+      "patch_applied_to_fresh_base": true,
+      "frozen_digests_verified": true,
+      "docker_checks_passed": 11,
+      "files_sha256": {
+        "candidate.patch": "f529a3e8910306b662d18f02b677916893bf5b47009d1dbc8843046f92eae63f",
+        "evidence.json": "9540d399b48a9f789fbed53022a442a0a0b1e3efcc35761290259249e1dd4538",
+        "summary.md": "9d0d4c9adec62a02f8b93f1780ac6e6d5b074d3e84c28447848d7ebe9c204900"
+      }
+    }
+  },
+  "submission": {
+    "required_video": "pending_under_3_minutes_public_or_unlisted_youtube_or_loom",
+    "live_deployment": "optional_not_required",
+    "form_submission": "not_submitted",
+    "repository_is_public": true
   }
 }

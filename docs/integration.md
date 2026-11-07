@@ -9,7 +9,7 @@ The two development roles build one product. Runtime contestants are separate na
 | 3 — Full match | Reproduction, adjudication, shared suite, repair, recovery, guarded selection and exports | Review/repair/decision UI, bridge commands, errors and fixture scenarios | Automated fixture match passes; invalid claims, stale evidence, runner errors and neither outcomes tested |
 | 4 — Integration and demo | Combine ready branches, run shared checks, verify exported patch on fresh task base | Complete native Switch setup, demo and experience docs | Genuine human + two-agent match recorded; patch applies and passes recorded suite; limitations documented |
 
-Current sprint: **4 — Integration and demo**. The user initiated integration. Both feature branches are combined in a separate worktree on `feat/arena-integration`; engine/client fixture checks pass. Native initial builds and dashboard reveal are corroborated by user screenshots and live engine records. Cross-review and the remaining native workflow are pending, so Sprint 4 is not complete and main has not been merged.
+Current sprint: **4 — Integration and demo**. The combined native match and selected export are verified. Both agents completed review, passed fresh 11/11 checks, and the human selected A; its patch applied to a fresh task base and passed 11/11 in Docker. The required short submission video and final submission remain pending. Main has not been merged.
 
 ## Sprint 1 scope
 
@@ -59,7 +59,15 @@ Current sprint: **4 — Integration and demo**. The user initiated integration. 
 - Prepared stable demo roots, copied B's client/prompts using the actual installer, and created a live building match. Official Console **0.40.1** was downloaded, checked against release SHA-256, extracted locally and launched. Docker Compose **5.7.0** works and the Codex CLI reports signed in. Those facts do not prove Console provider readiness or native registration.
 - Latest Role B delta `02562c564f052416ce016c7c6720ca0c6d69002e` is merged: Kali setup commands and a generated-instruction fix that preserves the actual smoke working directory. All **10** runtime-installer tests pass. Existing runtime files and the active match were left intact.
 - Native progress: user-supplied room screenshots show both contestants' actual submissions; live engine reads confirm distinct frozen candidates and completed initial official jobs, each **11/11 passed**. User-supplied dashboard screenshots show an authenticated reveal, corroborated by the engine's `reviewing` phase. Local evidence and screenshots are retained under ignored `var/demo/evidence/`; Mattermost messages have not been independently fetched. The configured model `gpt-6-sol` is user-reported; runtime model identity is not independently verified.
-- **Open gate:** complete cross-review, human adjudication, final full-suite verification, selection and native export validation. Main is not merged, feature PRs remain open, and no final demo recording is claimed. Role B's setup/smoke record describes its own earlier observation point; this integration checkpoint records subsequent host progress.
+- The earlier native review gate is now complete; see the November 7 checkpoint below. Main remains unmerged and the submission video remains pending.
+
+## Native completion checkpoint (2026-11-07)
+
+- Match `match_774ce14a30d742baa1cd59d07c239ec5` is complete. Both native contestants completed cross-review without findings or submitted challenges. Both fresh final official jobs passed **11/11**; each candidate became eligible. The human selected A with an explicit demo tie-break reason. No bug discovery, challenge acceptance or repair is claimed for this native run.
+- Downloaded the canonical `candidate.patch`, `evidence.json` and `summary.md`. Applied the patch to a new disposable clone of the pinned task base; the resulting source digest matched the selected candidate. Frozen specification, suite and runner digests matched recorded evidence. The trusted Docker runner then passed **11/11**, including instance isolation. Candidate code was never imported into the product process.
+- [Native export validation](../contracts/native-export-validation.json) records file hashes and the observed result. [The integration checkpoint](../contracts/integration-checkpoint.json) records final job IDs, the human reason and provenance. Native room evidence is operator-supplied; engine state and export validation were independently checked.
+- The actual submission form requires a public repository, a README explaining Switch/agents/channels/setup, a video under three minutes on public or unlisted YouTube/Loom, project/track details, a description of Switch use and feedback. Deployment is optional. The public FAQ lists November 7, 11:59 PM IST; the user's working target is 11 PM IST.
+- **Remaining:** record/upload the concise real-workflow video, add its URL, review the final form and submit. No submission confirmation or published video is claimed. Main merge requires an explicit user action; the combined public branch is available through the integration PR.
 
 ## Integration sequence (Sprint 4 only)
 

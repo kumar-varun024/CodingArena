@@ -92,3 +92,5 @@ node --experimental-transform-types \
 ```
 
 Use the Node 22.23.4 baseline for this helper; its TypeScript-transform flag is experimental and confined to validation. The check does not interact with a browser or native agents. Browser health at interface 1.1 and a labelled fixture UI flow have been observed; later user-supplied screenshots show native contestant submissions and authenticated dashboard reveal, corroborated by live engine records. See the [Sprint gates](integration.md); do not report the native gate as complete until that evidence exists.
+
+The November 7 native match and selected export have since completed and passed fresh-base Docker verification (11/11). See [the final native checkpoint](integration.md#native-completion-checkpoint-2026-11-07). Recording/uploading the required submission video remains separate from execution verification.

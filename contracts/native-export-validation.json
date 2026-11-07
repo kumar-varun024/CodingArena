@@ -1,0 +1,23 @@
+{
+  "recorded_at": "2026-11-07T09:05:14.644764+00:00",
+  "kind": "native_selected_export_validation",
+  "match_id": "match_774ce14a30d742baa1cd59d07c239ec5",
+  "selection": "a",
+  "candidate_id": "candidate_3bc0c0fde4d543488d4be9851a891710",
+  "fresh_task_base": "df7e3dd75ca117feee50c6cdf04b9f1c92a3a018",
+  "patch_applied": true,
+  "candidate_digest_verified": true,
+  "frozen_spec_suite_and_runner_digests_verified": true,
+  "execution": "trusted Docker runner; candidate never imported in product process",
+  "result": {
+    "check_count": 11,
+    "passed_count": 11,
+    "failed_check_ids": [],
+    "log": "BOOK-01: PASS\nBOOK-02: PASS\nBOOK-03: PASS\nBOOK-04: PASS\nBOOK-05: PASS\nBOOK-06: PASS\nBOOK-07: PASS\nHELD-BOOK-02: PASS\nHELD-BOOK-05: PASS\nHELD-BOOK-06: PASS\nHELD-BOOK-07-ISOLATION: PASS"
+  },
+  "files": {
+    "candidate.patch": "f529a3e8910306b662d18f02b677916893bf5b47009d1dbc8843046f92eae63f",
+    "evidence.json": "9540d399b48a9f789fbed53022a442a0a0b1e3efcc35761290259249e1dd4538",
+    "summary.md": "9d0d4c9adec62a02f8b93f1780ac6e6d5b074d3e84c28447848d7ebe9c204900"
+  }
+}
