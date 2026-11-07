@@ -1,0 +1,7 @@
+# booking-v1 deterministic fixtures
+
+Starter assignment: `starter/`, which includes the public specification and executable public cases. The reference implementation and held-out cases are engine-only and must never enter contestant assignments or API responses. Public cases are duplicated at `starter/public_cases.json` for the contestant distribution; the engine suite remains at `public_cases/public_cases.json`. `public_cases/public_cases.json` are suitable for contestant-visible practice; `held_out_cases/held_out_cases.json` are reserved for official verification. Each scenario creates a fresh instance.
+
+The frozen scenario format represents one instance and a sequential operation list. The trusted driver's separate `--check-instance-isolation` baseline checks BOOK-07 with two instances inside Docker, without changing the v1 Scenario format or exposing reference code.
+
+`known-good/booking.py` is a deterministic fixture implementing the trusted behavior and can be mounted as `src/booking.py`. `known-bad/group_partial_mutation.py` is paired with `known-bad/scenarios/group_partial_mutation.json`; it partially reserves a group after insufficient capacity, and the scenario asserts the full unchanged state. `known-bad/repeat_cancel.py` is paired with `known-bad/scenarios/repeat_cancel.json`; the scenario checks the second cancellation result and both `available()` and `reservations()` state. Mount either known-bad module as `src/booking.py` for fixture reproduction. All examples here are deterministic fixtures.

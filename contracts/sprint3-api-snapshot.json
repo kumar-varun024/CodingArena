@@ -1,0 +1,2101 @@
+{
+  "label": "Deterministic fixture clients against live HTTP/Docker; no Switch agents",
+  "responses": [
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/matches",
+      "status": 201,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "building",
+        "repair_round": 0,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:14.321458Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": null,
+            "review_complete": false
+          },
+          "b": {
+            "candidate": null,
+            "review_complete": false
+          }
+        },
+        "jobs": [],
+        "challenges": []
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/assignments/a",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "slot": "a",
+        "task_id": "booking-v1",
+        "phase": "building",
+        "repair_round": 0,
+        "task_spec": {
+          "challenge_example": {
+            "capacity": 3,
+            "steps": [
+              {
+                "args": [
+                  "family",
+                  2
+                ],
+                "expected": true,
+                "op": "book"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": true,
+                "op": "cancel"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": false,
+                "op": "cancel"
+              },
+              {
+                "args": [],
+                "expected": 3,
+                "op": "available"
+              },
+              {
+                "args": [],
+                "expected": {},
+                "op": "reservations"
+              }
+            ]
+          },
+          "constructor": "BookingSystem(capacity: int), capacity >=1",
+          "excluded": "No web booking application, persistence, simultaneous threads, payment, account login, arbitrary dependencies or network calls in the contestant task. These can be later task packs.",
+          "file": "src/booking.py",
+          "methods": [
+            "book(booking_id: str, seats: int) -> bool",
+            "cancel(booking_id: str) -> bool",
+            "available() -> int",
+            "reservations() -> dict[str, int]"
+          ],
+          "requirements": {
+            "BOOK-01": "A successful booking reserves exactly seats; capacity can never be exceeded.",
+            "BOOK-02": "Insufficient capacity returns False and leaves the entire reservation state unchanged; group bookings are all-or-nothing.",
+            "BOOK-03": "Cancelling an existing reservation returns True, removes it and releases exactly its booked seats.",
+            "BOOK-04": "Cancelling an unknown or already-cancelled ID returns False and changes nothing.",
+            "BOOK-05": "An already-active booking ID returns False and changes nothing. A cancelled ID may be reused.",
+            "BOOK-06": "book returns False without mutation for empty/non-string ID, non-integer seats (including bool), or seats <=0. cancel with empty/non-string ID also returns False without mutation.",
+            "BOOK-07": "available() equals capacity minus all active seats; reservations() returns the active ID-to-seat mapping. Different BookingSystem instances do not share bookings."
+          }
+        },
+        "task_text": "# booking-v1 specification\n\nAll materials in this task pack are deterministic fixtures. The starter and public cases are contestant-visible; reference code and held-out cases are engine-only.\n\nImplement `src/booking.py` with `BookingSystem(capacity: int)`, where `capacity >= 1`, and these methods:\n\n- `book(booking_id: str, seats: int) -> bool`\n- `cancel(booking_id: str) -> bool`\n- `available() -> int`\n- `reservations() -> dict[str, int]`\n\nRequirements:\n\n- **BOOK-01:** A successful booking reserves exactly seats; capacity can never be exceeded.\n- **BOOK-02:** Insufficient capacity returns `False` and leaves the entire reservation state unchanged; group bookings are all-or-nothing.\n- **BOOK-03:** Cancelling an existing reservation returns `True`, removes it and releases exactly its booked seats.\n- **BOOK-04:** Cancelling an unknown or already-cancelled ID returns `False` and changes nothing.\n- **BOOK-05:** An already-active booking ID returns `False` and changes nothing. A cancelled ID may be reused.\n- **BOOK-06:** `book` returns `False` without mutation for empty/non-string ID, non-integer seats (including `bool`), or seats <= 0. `cancel` with empty/non-string ID also returns `False` without mutation.\n- **BOOK-07:** `available()` equals capacity minus all active seats; `reservations()` returns the active ID-to-seat mapping. Different `BookingSystem` instances do not share bookings.\n\nThe constructor requires an integer capacity of at least 1. Scenarios invoke operations with positional JSON arguments and compare exact return values.\n",
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "base_commit": "32aab0d0dc2ef5dc69db5fd78c542a48f6d81ba6",
+        "allowed_files": [
+          "src/booking.py"
+        ],
+        "candidate_budget_minutes": 10,
+        "workspace_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/a/worktree",
+        "review_path": null,
+        "target_candidate_id": null,
+        "public_checks": [
+          "BOOK-01",
+          "BOOK-02",
+          "BOOK-03",
+          "BOOK-04",
+          "BOOK-05",
+          "BOOK-06",
+          "BOOK-07"
+        ],
+        "public_check_descriptions": [
+          "single booking consumes requested seats",
+          "over-capacity group booking is atomic",
+          "cancel releases exact booked seats",
+          "unknown and repeated cancellation are no-ops",
+          "active ID rejects duplicate and cancelled ID can be reused",
+          "invalid IDs and seat counts do not mutate state",
+          "queries report active bookings and remaining capacity"
+        ],
+        "practice_endpoint": "POST /api/v1/matches/match_2a728d7c223b48b7a52d10bd796a4c31/practice",
+        "accepted_challenges": []
+      }
+    },
+    {
+      "role": "b",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/assignments/b",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "slot": "b",
+        "task_id": "booking-v1",
+        "phase": "building",
+        "repair_round": 0,
+        "task_spec": {
+          "challenge_example": {
+            "capacity": 3,
+            "steps": [
+              {
+                "args": [
+                  "family",
+                  2
+                ],
+                "expected": true,
+                "op": "book"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": true,
+                "op": "cancel"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": false,
+                "op": "cancel"
+              },
+              {
+                "args": [],
+                "expected": 3,
+                "op": "available"
+              },
+              {
+                "args": [],
+                "expected": {},
+                "op": "reservations"
+              }
+            ]
+          },
+          "constructor": "BookingSystem(capacity: int), capacity >=1",
+          "excluded": "No web booking application, persistence, simultaneous threads, payment, account login, arbitrary dependencies or network calls in the contestant task. These can be later task packs.",
+          "file": "src/booking.py",
+          "methods": [
+            "book(booking_id: str, seats: int) -> bool",
+            "cancel(booking_id: str) -> bool",
+            "available() -> int",
+            "reservations() -> dict[str, int]"
+          ],
+          "requirements": {
+            "BOOK-01": "A successful booking reserves exactly seats; capacity can never be exceeded.",
+            "BOOK-02": "Insufficient capacity returns False and leaves the entire reservation state unchanged; group bookings are all-or-nothing.",
+            "BOOK-03": "Cancelling an existing reservation returns True, removes it and releases exactly its booked seats.",
+            "BOOK-04": "Cancelling an unknown or already-cancelled ID returns False and changes nothing.",
+            "BOOK-05": "An already-active booking ID returns False and changes nothing. A cancelled ID may be reused.",
+            "BOOK-06": "book returns False without mutation for empty/non-string ID, non-integer seats (including bool), or seats <=0. cancel with empty/non-string ID also returns False without mutation.",
+            "BOOK-07": "available() equals capacity minus all active seats; reservations() returns the active ID-to-seat mapping. Different BookingSystem instances do not share bookings."
+          }
+        },
+        "task_text": "# booking-v1 specification\n\nAll materials in this task pack are deterministic fixtures. The starter and public cases are contestant-visible; reference code and held-out cases are engine-only.\n\nImplement `src/booking.py` with `BookingSystem(capacity: int)`, where `capacity >= 1`, and these methods:\n\n- `book(booking_id: str, seats: int) -> bool`\n- `cancel(booking_id: str) -> bool`\n- `available() -> int`\n- `reservations() -> dict[str, int]`\n\nRequirements:\n\n- **BOOK-01:** A successful booking reserves exactly seats; capacity can never be exceeded.\n- **BOOK-02:** Insufficient capacity returns `False` and leaves the entire reservation state unchanged; group bookings are all-or-nothing.\n- **BOOK-03:** Cancelling an existing reservation returns `True`, removes it and releases exactly its booked seats.\n- **BOOK-04:** Cancelling an unknown or already-cancelled ID returns `False` and changes nothing.\n- **BOOK-05:** An already-active booking ID returns `False` and changes nothing. A cancelled ID may be reused.\n- **BOOK-06:** `book` returns `False` without mutation for empty/non-string ID, non-integer seats (including `bool`), or seats <= 0. `cancel` with empty/non-string ID also returns `False` without mutation.\n- **BOOK-07:** `available()` equals capacity minus all active seats; `reservations()` returns the active ID-to-seat mapping. Different `BookingSystem` instances do not share bookings.\n\nThe constructor requires an integer capacity of at least 1. Scenarios invoke operations with positional JSON arguments and compare exact return values.\n",
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "base_commit": "32aab0d0dc2ef5dc69db5fd78c542a48f6d81ba6",
+        "allowed_files": [
+          "src/booking.py"
+        ],
+        "candidate_budget_minutes": 10,
+        "workspace_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/b/worktree",
+        "review_path": null,
+        "target_candidate_id": null,
+        "public_checks": [
+          "BOOK-01",
+          "BOOK-02",
+          "BOOK-03",
+          "BOOK-04",
+          "BOOK-05",
+          "BOOK-06",
+          "BOOK-07"
+        ],
+        "public_check_descriptions": [
+          "single booking consumes requested seats",
+          "over-capacity group booking is atomic",
+          "cancel releases exact booked seats",
+          "unknown and repeated cancellation are no-ops",
+          "active ID rejects duplicate and cancelled ID can be reused",
+          "invalid IDs and seat counts do not mutate state",
+          "queries report active bookings and remaining capacity"
+        ],
+        "practice_endpoint": "POST /api/v1/matches/match_2a728d7c223b48b7a52d10bd796a4c31/practice",
+        "accepted_challenges": []
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/practice",
+      "status": 202,
+      "body": {
+        "job_id": "job_6040bd7e33794f1bbc8b541a484debe5"
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_6040bd7e33794f1bbc8b541a484debe5",
+      "status": 200,
+      "body": {
+        "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "practice",
+        "candidate_id": null,
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "passed",
+          "check_count": 7,
+          "passed_count": 7,
+          "failed_check_ids": [],
+          "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+          "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+          "evidence_key": {
+            "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/submissions",
+      "status": 202,
+      "body": {
+        "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+        "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+        "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667"
+      }
+    },
+    {
+      "role": "b",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/submissions",
+      "status": 202,
+      "body": {
+        "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+        "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "tree_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16"
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "building",
+        "repair_round": 0,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:22.186151Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+              "slot": "a",
+              "revision": 1,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "pending",
+              "verification": {
+                "status": "running",
+                "check_count": 0,
+                "passed_count": 0,
+                "failed_check_ids": [],
+                "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+                "log_artifact_id": null,
+                "evidence_key": null
+              }
+            },
+            "review_complete": false
+          },
+          "b": {
+            "candidate": null,
+            "review_complete": false
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "practice",
+            "candidate_id": null,
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 7,
+              "passed_count": 7,
+              "failed_check_ids": [],
+              "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+              "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "running",
+            "result": null,
+            "error": null
+          }
+        ],
+        "challenges": []
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_b8a7ba3d22b04b0696acd03970015d35",
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Job is not visible to this slot",
+          "details": {}
+        }
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_df650b236181404cb800c82bd6ab54e3",
+      "status": 200,
+      "body": {
+        "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "verification",
+        "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "passed",
+          "check_count": 11,
+          "passed_count": 11,
+          "failed_check_ids": [],
+          "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+          "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+          "evidence_key": {
+            "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "b",
+      "method": "GET",
+      "path": "/jobs/job_b8a7ba3d22b04b0696acd03970015d35",
+      "status": 200,
+      "body": {
+        "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "verification",
+        "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "failed",
+          "check_count": 11,
+          "passed_count": 10,
+          "failed_check_ids": [
+            "BOOK-04"
+          ],
+          "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+          "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+          "evidence_key": {
+            "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/artifacts/artifact_45c32f28da8c4bd7b91540afed22395f",
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Artifact is not visible to this slot",
+          "details": {}
+        }
+      }
+    },
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/actions",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "reviewing",
+        "repair_round": 0,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:40.580551Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+              "slot": "a",
+              "revision": 1,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "pending",
+              "verification": {
+                "status": "passed",
+                "check_count": 11,
+                "passed_count": 11,
+                "failed_check_ids": [],
+                "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+                "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": false
+          },
+          "b": {
+            "candidate": {
+              "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+              "slot": "b",
+              "revision": 1,
+              "commit_sha": "7a0ecb2dbf37334a0f2b3e3a0187465633278fed",
+              "tree_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+              "eligibility": "ineligible",
+              "verification": {
+                "status": "failed",
+                "check_count": 11,
+                "passed_count": 10,
+                "failed_check_ids": [
+                  "BOOK-04"
+                ],
+                "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+                "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+                "evidence_key": {
+                  "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": false
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "practice",
+            "candidate_id": null,
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 7,
+              "passed_count": 7,
+              "failed_check_ids": [],
+              "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+              "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 11,
+              "passed_count": 11,
+              "failed_check_ids": [],
+              "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+              "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "failed",
+              "check_count": 11,
+              "passed_count": 10,
+              "failed_check_ids": [
+                "BOOK-04"
+              ],
+              "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+              "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+              "evidence_key": {
+                "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          }
+        ],
+        "challenges": []
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/assignments/a",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "slot": "a",
+        "task_id": "booking-v1",
+        "phase": "reviewing",
+        "repair_round": 0,
+        "task_spec": {
+          "challenge_example": {
+            "capacity": 3,
+            "steps": [
+              {
+                "args": [
+                  "family",
+                  2
+                ],
+                "expected": true,
+                "op": "book"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": true,
+                "op": "cancel"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": false,
+                "op": "cancel"
+              },
+              {
+                "args": [],
+                "expected": 3,
+                "op": "available"
+              },
+              {
+                "args": [],
+                "expected": {},
+                "op": "reservations"
+              }
+            ]
+          },
+          "constructor": "BookingSystem(capacity: int), capacity >=1",
+          "excluded": "No web booking application, persistence, simultaneous threads, payment, account login, arbitrary dependencies or network calls in the contestant task. These can be later task packs.",
+          "file": "src/booking.py",
+          "methods": [
+            "book(booking_id: str, seats: int) -> bool",
+            "cancel(booking_id: str) -> bool",
+            "available() -> int",
+            "reservations() -> dict[str, int]"
+          ],
+          "requirements": {
+            "BOOK-01": "A successful booking reserves exactly seats; capacity can never be exceeded.",
+            "BOOK-02": "Insufficient capacity returns False and leaves the entire reservation state unchanged; group bookings are all-or-nothing.",
+            "BOOK-03": "Cancelling an existing reservation returns True, removes it and releases exactly its booked seats.",
+            "BOOK-04": "Cancelling an unknown or already-cancelled ID returns False and changes nothing.",
+            "BOOK-05": "An already-active booking ID returns False and changes nothing. A cancelled ID may be reused.",
+            "BOOK-06": "book returns False without mutation for empty/non-string ID, non-integer seats (including bool), or seats <=0. cancel with empty/non-string ID also returns False without mutation.",
+            "BOOK-07": "available() equals capacity minus all active seats; reservations() returns the active ID-to-seat mapping. Different BookingSystem instances do not share bookings."
+          }
+        },
+        "task_text": "# booking-v1 specification\n\nAll materials in this task pack are deterministic fixtures. The starter and public cases are contestant-visible; reference code and held-out cases are engine-only.\n\nImplement `src/booking.py` with `BookingSystem(capacity: int)`, where `capacity >= 1`, and these methods:\n\n- `book(booking_id: str, seats: int) -> bool`\n- `cancel(booking_id: str) -> bool`\n- `available() -> int`\n- `reservations() -> dict[str, int]`\n\nRequirements:\n\n- **BOOK-01:** A successful booking reserves exactly seats; capacity can never be exceeded.\n- **BOOK-02:** Insufficient capacity returns `False` and leaves the entire reservation state unchanged; group bookings are all-or-nothing.\n- **BOOK-03:** Cancelling an existing reservation returns `True`, removes it and releases exactly its booked seats.\n- **BOOK-04:** Cancelling an unknown or already-cancelled ID returns `False` and changes nothing.\n- **BOOK-05:** An already-active booking ID returns `False` and changes nothing. A cancelled ID may be reused.\n- **BOOK-06:** `book` returns `False` without mutation for empty/non-string ID, non-integer seats (including `bool`), or seats <= 0. `cancel` with empty/non-string ID also returns `False` without mutation.\n- **BOOK-07:** `available()` equals capacity minus all active seats; `reservations()` returns the active ID-to-seat mapping. Different `BookingSystem` instances do not share bookings.\n\nThe constructor requires an integer capacity of at least 1. Scenarios invoke operations with positional JSON arguments and compare exact return values.\n",
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "base_commit": "32aab0d0dc2ef5dc69db5fd78c542a48f6d81ba6",
+        "allowed_files": [
+          "src/booking.py"
+        ],
+        "candidate_budget_minutes": 10,
+        "workspace_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/a/worktree",
+        "review_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/a/review/candidate_174d5c6b037b48f098541b196aede7b2",
+        "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "public_checks": [
+          "BOOK-01",
+          "BOOK-02",
+          "BOOK-03",
+          "BOOK-04",
+          "BOOK-05",
+          "BOOK-06",
+          "BOOK-07"
+        ],
+        "public_check_descriptions": [
+          "single booking consumes requested seats",
+          "over-capacity group booking is atomic",
+          "cancel releases exact booked seats",
+          "unknown and repeated cancellation are no-ops",
+          "active ID rejects duplicate and cancelled ID can be reused",
+          "invalid IDs and seat counts do not mutate state",
+          "queries report active bookings and remaining capacity"
+        ],
+        "practice_endpoint": "POST /api/v1/matches/match_2a728d7c223b48b7a52d10bd796a4c31/practice",
+        "accepted_challenges": []
+      }
+    },
+    {
+      "role": "b",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/assignments/b",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "slot": "b",
+        "task_id": "booking-v1",
+        "phase": "reviewing",
+        "repair_round": 0,
+        "task_spec": {
+          "challenge_example": {
+            "capacity": 3,
+            "steps": [
+              {
+                "args": [
+                  "family",
+                  2
+                ],
+                "expected": true,
+                "op": "book"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": true,
+                "op": "cancel"
+              },
+              {
+                "args": [
+                  "family"
+                ],
+                "expected": false,
+                "op": "cancel"
+              },
+              {
+                "args": [],
+                "expected": 3,
+                "op": "available"
+              },
+              {
+                "args": [],
+                "expected": {},
+                "op": "reservations"
+              }
+            ]
+          },
+          "constructor": "BookingSystem(capacity: int), capacity >=1",
+          "excluded": "No web booking application, persistence, simultaneous threads, payment, account login, arbitrary dependencies or network calls in the contestant task. These can be later task packs.",
+          "file": "src/booking.py",
+          "methods": [
+            "book(booking_id: str, seats: int) -> bool",
+            "cancel(booking_id: str) -> bool",
+            "available() -> int",
+            "reservations() -> dict[str, int]"
+          ],
+          "requirements": {
+            "BOOK-01": "A successful booking reserves exactly seats; capacity can never be exceeded.",
+            "BOOK-02": "Insufficient capacity returns False and leaves the entire reservation state unchanged; group bookings are all-or-nothing.",
+            "BOOK-03": "Cancelling an existing reservation returns True, removes it and releases exactly its booked seats.",
+            "BOOK-04": "Cancelling an unknown or already-cancelled ID returns False and changes nothing.",
+            "BOOK-05": "An already-active booking ID returns False and changes nothing. A cancelled ID may be reused.",
+            "BOOK-06": "book returns False without mutation for empty/non-string ID, non-integer seats (including bool), or seats <=0. cancel with empty/non-string ID also returns False without mutation.",
+            "BOOK-07": "available() equals capacity minus all active seats; reservations() returns the active ID-to-seat mapping. Different BookingSystem instances do not share bookings."
+          }
+        },
+        "task_text": "# booking-v1 specification\n\nAll materials in this task pack are deterministic fixtures. The starter and public cases are contestant-visible; reference code and held-out cases are engine-only.\n\nImplement `src/booking.py` with `BookingSystem(capacity: int)`, where `capacity >= 1`, and these methods:\n\n- `book(booking_id: str, seats: int) -> bool`\n- `cancel(booking_id: str) -> bool`\n- `available() -> int`\n- `reservations() -> dict[str, int]`\n\nRequirements:\n\n- **BOOK-01:** A successful booking reserves exactly seats; capacity can never be exceeded.\n- **BOOK-02:** Insufficient capacity returns `False` and leaves the entire reservation state unchanged; group bookings are all-or-nothing.\n- **BOOK-03:** Cancelling an existing reservation returns `True`, removes it and releases exactly its booked seats.\n- **BOOK-04:** Cancelling an unknown or already-cancelled ID returns `False` and changes nothing.\n- **BOOK-05:** An already-active booking ID returns `False` and changes nothing. A cancelled ID may be reused.\n- **BOOK-06:** `book` returns `False` without mutation for empty/non-string ID, non-integer seats (including `bool`), or seats <= 0. `cancel` with empty/non-string ID also returns `False` without mutation.\n- **BOOK-07:** `available()` equals capacity minus all active seats; `reservations()` returns the active ID-to-seat mapping. Different `BookingSystem` instances do not share bookings.\n\nThe constructor requires an integer capacity of at least 1. Scenarios invoke operations with positional JSON arguments and compare exact return values.\n",
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+        "base_commit": "32aab0d0dc2ef5dc69db5fd78c542a48f6d81ba6",
+        "allowed_files": [
+          "src/booking.py"
+        ],
+        "candidate_budget_minutes": 10,
+        "workspace_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/b/worktree",
+        "review_path": "/home/varun/Documents/CodingArena/var/smoke-464693c395784724b1444685a9a4aba4/workers/b/review/candidate_2cce6d26b0cf4104866604664084f4bc",
+        "target_candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+        "public_checks": [
+          "BOOK-01",
+          "BOOK-02",
+          "BOOK-03",
+          "BOOK-04",
+          "BOOK-05",
+          "BOOK-06",
+          "BOOK-07"
+        ],
+        "public_check_descriptions": [
+          "single booking consumes requested seats",
+          "over-capacity group booking is atomic",
+          "cancel releases exact booked seats",
+          "unknown and repeated cancellation are no-ops",
+          "active ID rejects duplicate and cancelled ID can be reused",
+          "invalid IDs and seat counts do not mutate state",
+          "queries report active bookings and remaining capacity"
+        ],
+        "practice_endpoint": "POST /api/v1/matches/match_2a728d7c223b48b7a52d10bd796a4c31/practice",
+        "accepted_challenges": []
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_b8a7ba3d22b04b0696acd03970015d35",
+      "status": 200,
+      "body": {
+        "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "verification",
+        "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "failed",
+          "check_count": 11,
+          "passed_count": 10,
+          "failed_check_ids": [
+            "BOOK-04"
+          ],
+          "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+          "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+          "evidence_key": {
+            "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/challenges",
+      "status": 202,
+      "body": {
+        "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+        "job_id": "job_a21ea9227b394bbab81db498f22991e8"
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_a21ea9227b394bbab81db498f22991e8",
+      "status": 200,
+      "body": {
+        "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "challenge",
+        "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+        "status": "completed",
+        "result": {
+          "status": "reproduced",
+          "reference_passed": true,
+          "target_failed_twice": true,
+          "actual_summary": "Target failed both fresh attempts",
+          "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+          "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/challenges",
+      "status": 202,
+      "body": {
+        "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+        "job_id": "job_5684cc505df048d6aa527d7fc755f556"
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_5684cc505df048d6aa527d7fc755f556",
+      "status": 200,
+      "body": {
+        "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "challenge",
+        "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+        "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+        "status": "completed",
+        "result": {
+          "status": "invalid",
+          "reference_passed": false,
+          "target_failed_twice": null,
+          "actual_summary": "Scenario does not pass the trusted reference",
+          "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+          "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/reviews/a/complete",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "reviewing",
+        "repair_round": 0,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:44.976543Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+              "slot": "a",
+              "revision": 1,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 11,
+                "failed_check_ids": [],
+                "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+                "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          },
+          "b": {
+            "candidate": {
+              "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+              "slot": "b",
+              "revision": 1,
+              "commit_sha": "7a0ecb2dbf37334a0f2b3e3a0187465633278fed",
+              "tree_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 10,
+                "failed_check_ids": [
+                  "BOOK-04"
+                ],
+                "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+                "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+                "evidence_key": {
+                  "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": false
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "practice",
+            "candidate_id": null,
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 7,
+              "passed_count": 7,
+              "failed_check_ids": [],
+              "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+              "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 11,
+              "passed_count": 11,
+              "failed_check_ids": [],
+              "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+              "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "failed",
+              "check_count": 11,
+              "passed_count": 10,
+              "failed_check_ids": [
+                "BOOK-04"
+              ],
+              "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+              "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+              "evidence_key": {
+                "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "status": "completed",
+            "result": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "status": "completed",
+            "result": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "error": null
+          }
+        ],
+        "challenges": [
+          {
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-04"
+            ],
+            "title": "Fixture repeated cancellation violates BOOK-04",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "book",
+                  "args": [
+                    "once",
+                    2
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": false
+                },
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": 3
+                },
+                {
+                  "op": "reservations",
+                  "args": [],
+                  "expected": {}
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "disposition": "accepted",
+            "decision_reason": "Fixture operator: BOOK-04 requires second cancellation false without mutation",
+            "regression_digest": "cf541d5fb655bb0b47646ca238092a106a8bc76751c43b425266d2fe62c10bd5"
+          },
+          {
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-07"
+            ],
+            "title": "Deliberately wrong typed expectation fixture",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": true
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "disposition": "rejected",
+            "decision_reason": "Scenario does not pass the trusted reference",
+            "regression_digest": null
+          }
+        ]
+      }
+    },
+    {
+      "role": "b",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/reviews/b/complete",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "reviewing",
+        "repair_round": 0,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:44.990739Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+              "slot": "a",
+              "revision": 1,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 11,
+                "failed_check_ids": [],
+                "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+                "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          },
+          "b": {
+            "candidate": {
+              "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+              "slot": "b",
+              "revision": 1,
+              "commit_sha": "7a0ecb2dbf37334a0f2b3e3a0187465633278fed",
+              "tree_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 10,
+                "failed_check_ids": [
+                  "BOOK-04"
+                ],
+                "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+                "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+                "evidence_key": {
+                  "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 11,
+              "passed_count": 11,
+              "failed_check_ids": [],
+              "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+              "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "failed",
+              "check_count": 11,
+              "passed_count": 10,
+              "failed_check_ids": [
+                "BOOK-04"
+              ],
+              "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+              "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+              "evidence_key": {
+                "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "status": "completed",
+            "result": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "status": "completed",
+            "result": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "error": null
+          }
+        ],
+        "challenges": [
+          {
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-04"
+            ],
+            "title": "Fixture repeated cancellation violates BOOK-04",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "book",
+                  "args": [
+                    "once",
+                    2
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": false
+                },
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": 3
+                },
+                {
+                  "op": "reservations",
+                  "args": [],
+                  "expected": {}
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "disposition": "accepted",
+            "decision_reason": "Fixture operator: BOOK-04 requires second cancellation false without mutation",
+            "regression_digest": "cf541d5fb655bb0b47646ca238092a106a8bc76751c43b425266d2fe62c10bd5"
+          },
+          {
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-07"
+            ],
+            "title": "Deliberately wrong typed expectation fixture",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": true
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "disposition": "rejected",
+            "decision_reason": "Scenario does not pass the trusted reference",
+            "regression_digest": null
+          }
+        ]
+      }
+    },
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/actions",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "repairing",
+        "repair_round": 1,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:04:45.005835Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+              "slot": "a",
+              "revision": 1,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 11,
+                "failed_check_ids": [],
+                "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+                "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          },
+          "b": {
+            "candidate": {
+              "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+              "slot": "b",
+              "revision": 1,
+              "commit_sha": "7a0ecb2dbf37334a0f2b3e3a0187465633278fed",
+              "tree_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+              "eligibility": "pending",
+              "verification": {
+                "status": "stale",
+                "check_count": 11,
+                "passed_count": 10,
+                "failed_check_ids": [
+                  "BOOK-04"
+                ],
+                "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+                "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+                "evidence_key": {
+                  "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "practice",
+            "candidate_id": null,
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 7,
+              "passed_count": 7,
+              "failed_check_ids": [],
+              "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+              "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 11,
+              "passed_count": 11,
+              "failed_check_ids": [],
+              "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+              "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "failed",
+              "check_count": 11,
+              "passed_count": 10,
+              "failed_check_ids": [
+                "BOOK-04"
+              ],
+              "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+              "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+              "evidence_key": {
+                "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "status": "completed",
+            "result": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "status": "completed",
+            "result": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "error": null
+          }
+        ],
+        "challenges": [
+          {
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-04"
+            ],
+            "title": "Fixture repeated cancellation violates BOOK-04",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "book",
+                  "args": [
+                    "once",
+                    2
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": false
+                },
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": 3
+                },
+                {
+                  "op": "reservations",
+                  "args": [],
+                  "expected": {}
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "disposition": "accepted",
+            "decision_reason": "Fixture operator: BOOK-04 requires second cancellation false without mutation",
+            "regression_digest": "cf541d5fb655bb0b47646ca238092a106a8bc76751c43b425266d2fe62c10bd5"
+          },
+          {
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-07"
+            ],
+            "title": "Deliberately wrong typed expectation fixture",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": true
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "disposition": "rejected",
+            "decision_reason": "Scenario does not pass the trusted reference",
+            "regression_digest": null
+          }
+        ]
+      }
+    },
+    {
+      "role": "a",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/submissions",
+      "status": 202,
+      "body": {
+        "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+        "candidate_id": "candidate_0312a2b7714342108949c2255658a5d6",
+        "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667"
+      }
+    },
+    {
+      "role": "b",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/submissions",
+      "status": 202,
+      "body": {
+        "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+        "candidate_id": "candidate_05062dcafd0a43649dc7d536eab3ebca",
+        "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667"
+      }
+    },
+    {
+      "role": "a",
+      "method": "GET",
+      "path": "/jobs/job_750f2f40d8ef4d04a2e7f626d230f5bd",
+      "status": 200,
+      "body": {
+        "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "verification",
+        "candidate_id": "candidate_0312a2b7714342108949c2255658a5d6",
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "passed",
+          "check_count": 12,
+          "passed_count": 12,
+          "failed_check_ids": [],
+          "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+          "log_artifact_id": "artifact_2bf1f3b5185349fa83d8f73ee79aca69",
+          "evidence_key": {
+            "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "b",
+      "method": "GET",
+      "path": "/jobs/job_1d047d5b97dd40b992579a59dd35c649",
+      "status": 200,
+      "body": {
+        "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "kind": "verification",
+        "candidate_id": "candidate_05062dcafd0a43649dc7d536eab3ebca",
+        "challenge_id": null,
+        "status": "completed",
+        "result": {
+          "status": "passed",
+          "check_count": 12,
+          "passed_count": 12,
+          "failed_check_ids": [],
+          "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+          "log_artifact_id": "artifact_18b5968fb901452a8304d021e02e114c",
+          "evidence_key": {
+            "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+            "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+            "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+            "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+          }
+        },
+        "error": null
+      }
+    },
+    {
+      "role": "operator",
+      "method": "GET",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31",
+      "status": 200,
+      "body": {
+        "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+        "task_id": "booking-v1",
+        "mode": "live",
+        "phase": "decision",
+        "repair_round": 1,
+        "max_repair_rounds": 2,
+        "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+        "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+        "created_at": "2026-11-06T12:04:14.321458Z",
+        "updated_at": "2026-11-06T12:05:03.261270Z",
+        "outcome": null,
+        "slots": {
+          "a": {
+            "candidate": {
+              "candidate_id": "candidate_0312a2b7714342108949c2255658a5d6",
+              "slot": "a",
+              "revision": 2,
+              "commit_sha": "3508b146f0d47eeb446cb9432cf74220ef9d2d3b",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "eligible",
+              "verification": {
+                "status": "passed",
+                "check_count": 12,
+                "passed_count": 12,
+                "failed_check_ids": [],
+                "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+                "log_artifact_id": "artifact_2bf1f3b5185349fa83d8f73ee79aca69",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          },
+          "b": {
+            "candidate": {
+              "candidate_id": "candidate_05062dcafd0a43649dc7d536eab3ebca",
+              "slot": "b",
+              "revision": 2,
+              "commit_sha": "6a3fec532d6658b4d0c0f784e8372a85b95283c9",
+              "tree_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+              "eligibility": "eligible",
+              "verification": {
+                "status": "passed",
+                "check_count": 12,
+                "passed_count": 12,
+                "failed_check_ids": [],
+                "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+                "log_artifact_id": "artifact_18b5968fb901452a8304d021e02e114c",
+                "evidence_key": {
+                  "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                  "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                  "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+                  "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+                }
+              }
+            },
+            "review_complete": true
+          }
+        },
+        "jobs": [
+          {
+            "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "practice",
+            "candidate_id": null,
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 7,
+              "passed_count": 7,
+              "failed_check_ids": [],
+              "job_id": "job_6040bd7e33794f1bbc8b541a484debe5",
+              "log_artifact_id": "artifact_b1e9f1b9aecf4e509cd71eac3bbcd571",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "2381d71ce665386f42182d5f3445dace77f007f65b5ecaac6abd5d69539e69d6",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_2cce6d26b0cf4104866604664084f4bc",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 11,
+              "passed_count": 11,
+              "failed_check_ids": [],
+              "job_id": "job_df650b236181404cb800c82bd6ab54e3",
+              "log_artifact_id": "artifact_c17fc9e98b8542a0a34e9736bcae83aa",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "failed",
+              "check_count": 11,
+              "passed_count": 10,
+              "failed_check_ids": [
+                "BOOK-04"
+              ],
+              "job_id": "job_b8a7ba3d22b04b0696acd03970015d35",
+              "log_artifact_id": "artifact_45c32f28da8c4bd7b91540afed22395f",
+              "evidence_key": {
+                "candidate_digest": "b6b12eab142cc56952d4a5f2a827f9e2d1589fe86be0ea09789472dfb37bfb16",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "4570dc84d2c2f1b5162065b9e1b1b61e9a25aee6f18f947cbb6c0db2e0e785ce",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "status": "completed",
+            "result": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "challenge",
+            "candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "status": "completed",
+            "result": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_0312a2b7714342108949c2255658a5d6",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 12,
+              "passed_count": 12,
+              "failed_check_ids": [],
+              "job_id": "job_750f2f40d8ef4d04a2e7f626d230f5bd",
+              "log_artifact_id": "artifact_2bf1f3b5185349fa83d8f73ee79aca69",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          },
+          {
+            "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+            "match_id": "match_2a728d7c223b48b7a52d10bd796a4c31",
+            "kind": "verification",
+            "candidate_id": "candidate_05062dcafd0a43649dc7d536eab3ebca",
+            "challenge_id": null,
+            "status": "completed",
+            "result": {
+              "status": "passed",
+              "check_count": 12,
+              "passed_count": 12,
+              "failed_check_ids": [],
+              "job_id": "job_1d047d5b97dd40b992579a59dd35c649",
+              "log_artifact_id": "artifact_18b5968fb901452a8304d021e02e114c",
+              "evidence_key": {
+                "candidate_digest": "55fb697c44c9649cf7cd85dff49c044be1b207abf4ae5c6519f2662d31586667",
+                "spec_digest": "7e5483dfaf1e9ead51d0bd9be8c28267c912f071d1fa7d3e3d3fc1647c83cf23",
+                "suite_digest": "d1c3e83d02d0792b5614bb89ec25f0803999be29f7e1e6927170371d22e7c0c4",
+                "runner_digest": "1b8aa162a2d9cb20f570245841e0303b83d83dc98c164b3c5764c068794f503f"
+              }
+            },
+            "error": null
+          }
+        ],
+        "challenges": [
+          {
+            "challenge_id": "challenge_ea85ea927f8b45478a08751e9a715af1",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-04"
+            ],
+            "title": "Fixture repeated cancellation violates BOOK-04",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "book",
+                  "args": [
+                    "once",
+                    2
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": true
+                },
+                {
+                  "op": "cancel",
+                  "args": [
+                    "once"
+                  ],
+                  "expected": false
+                },
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": 3
+                },
+                {
+                  "op": "reservations",
+                  "args": [],
+                  "expected": {}
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "reproduced",
+              "reference_passed": true,
+              "target_failed_twice": true,
+              "actual_summary": "Target failed both fresh attempts",
+              "job_id": "job_a21ea9227b394bbab81db498f22991e8",
+              "log_artifact_id": "artifact_612d09f35cc2483dac8fa61426546480"
+            },
+            "disposition": "accepted",
+            "decision_reason": "Fixture operator: BOOK-04 requires second cancellation false without mutation",
+            "regression_digest": "cf541d5fb655bb0b47646ca238092a106a8bc76751c43b425266d2fe62c10bd5"
+          },
+          {
+            "challenge_id": "challenge_172ca28d8512462fb85142dd61a50bf8",
+            "submitted_by": "a",
+            "target_candidate_id": "candidate_174d5c6b037b48f098541b196aede7b2",
+            "requirement_ids": [
+              "BOOK-07"
+            ],
+            "title": "Deliberately wrong typed expectation fixture",
+            "scenario": {
+              "capacity": 3,
+              "steps": [
+                {
+                  "op": "available",
+                  "args": [],
+                  "expected": true
+                }
+              ]
+            },
+            "reproduction": {
+              "status": "invalid",
+              "reference_passed": false,
+              "target_failed_twice": null,
+              "actual_summary": "Scenario does not pass the trusted reference",
+              "job_id": "job_5684cc505df048d6aa527d7fc755f556",
+              "log_artifact_id": "artifact_d539244e024342eca5d564caad79f2e3"
+            },
+            "disposition": "rejected",
+            "decision_reason": "Scenario does not pass the trusted reference",
+            "regression_digest": null
+          }
+        ]
+      }
+    },
+    {
+      "role": "operator",
+      "method": "POST",
+      "path": "/matches/match_2a728d7c223b48b7a52d10bd796a4c31/selection",
+      "status": 409,
+      "body": {
+        "error": {
+          "code": "STALE_SNAPSHOT",
+          "message": "Candidate revision or exact evidence key changed",
+          "details": {}
+        }
+      }
+    }
+  ]
+}
